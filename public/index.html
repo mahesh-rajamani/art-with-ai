@@ -123,6 +123,26 @@ body{
 .back-btn:hover{background:rgba(255,255,255,.3)}
 .chat-title{font-family:'Baloo 2',sans-serif;font-weight:900;font-size:20px;color:#fff}
 .chat-counter{margin-left:auto;background:rgba(255,255,255,.2);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:800}
+/* ── COLORING TOGGLE ── */
+.color-toggle-bar{
+  width:100%;background:rgba(0,0,0,.15);
+  padding:8px 20px;display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.color-toggle-label{font-size:13px;font-weight:800;color:rgba(255,255,255,.9);display:flex;align-items:center;gap:6px}
+.toggle-switch{position:relative;width:48px;height:26px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{
+  position:absolute;inset:0;background:rgba(255,255,255,.25);
+  border-radius:26px;cursor:pointer;transition:.3s;
+}
+.toggle-slider:before{
+  content:'';position:absolute;width:20px;height:20px;
+  left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;
+}
+.toggle-switch input:checked + .toggle-slider{background:#FFD54F}
+.toggle-switch input:checked + .toggle-slider:before{transform:translateX(22px);background:var(--ink)}
+.color-mode-hint{font-size:11px;color:rgba(255,255,255,.7);font-weight:700}
 .chat-body{flex:1;width:100%;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
 .chat-footer{width:100%;padding:16px;background:#fff;box-shadow:0 -4px 20px rgba(0,0,0,.08);flex-shrink:0}
 .chat-input-row{display:flex;gap:10px;align-items:flex-end}
@@ -218,6 +238,16 @@ body{
     <button class="back-btn" onclick="goBack()">← Back</button>
     <span class="chat-title">✨ Create Magic</span>
     <div class="chat-counter" id="chatCounter">0 / 10</div>
+  </div>
+  <div class="color-toggle-bar">
+    <div class="color-toggle-label">
+      🖍️ Coloring Page Mode
+      <span class="color-mode-hint" id="colorModeHint"></span>
+    </div>
+    <label class="toggle-switch">
+      <input type="checkbox" id="coloringToggle" onchange="onColoringToggle()"/>
+      <span class="toggle-slider"></span>
+    </label>
   </div>
   <div class="chat-body" id="chatBody"></div>
   <div class="chat-footer">
@@ -340,17 +370,32 @@ function updateCounter(){
 function handleKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendPrompt();} }
 function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
 
+const COLORING_SUFFIX = 'as a black and white coloring page, thick bold outlines, no color fill, white background, simple clean line art, printable';
+
+function onColoringToggle(){
+  const on = document.getElementById('coloringToggle').checked;
+  document.getElementById('colorModeHint').textContent = on ? '✅ ON' : '';
+  document.getElementById('chatInput').placeholder = on
+    ? 'Describe your picture — it will be a coloring page! 🖍️'
+    : 'What do you want to draw? Try: a flying elephant with rainbow wings 🐘';
+  toast(on ? '🖍️ Coloring page mode ON!' : '🎨 Color mode ON!');
+}
+
 async function sendPrompt(){
   const input = document.getElementById('chatInput');
-  const prompt = input.value.trim();
-  if (!prompt) return;
+  const rawPrompt = input.value.trim();
+  if (!rawPrompt) return;
   if (currentSession.prompts.length >= 10) { toast('Max 10 prompts reached!'); return; }
+
+  const isColoring = document.getElementById('coloringToggle').checked;
+  // Actual prompt sent to AI — includes coloring suffix if toggle is on
+  const prompt = isColoring ? `${rawPrompt}, ${COLORING_SUFFIX}` : rawPrompt;
 
   input.value=''; input.style.height='auto';
   document.getElementById('sendBtn').disabled = true;
 
-  addUserMsg(prompt);
-  currentSession.prompts.push(prompt);
+  addUserMsg(rawPrompt); // show kid's original text in chat, not the suffix
+  currentSession.prompts.push(rawPrompt);
   updateCounter();
 
   const typing = addTyping();
@@ -359,8 +404,8 @@ async function sendPrompt(){
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt,
-        allPrompts: currentSession.prompts.slice(0, -1), // all previous prompts
+        prompt,          // enriched prompt with coloring suffix
+        allPrompts: currentSession.prompts.slice(0, -1),
         inputImage: currentSession.currentImage,
         kidName: currentKid
       })
