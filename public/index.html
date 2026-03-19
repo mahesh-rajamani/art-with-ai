@@ -348,6 +348,7 @@ async function sendPrompt(){
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         prompt,
+        allPrompts: currentSession.prompts.slice(0, -1), // all previous prompts
         inputImage: currentSession.currentImage,
         kidName: currentKid
       })
@@ -379,13 +380,30 @@ function saveLocal(){
   try { localStorage.setItem('iags_sessions', JSON.stringify(allSessions)); } catch(e){}
 }
 
-function saveCurrentImage(){
+async function saveCurrentImage(){
   const url = currentSession.currentImage;
   if (!url) { toast('No image yet!'); return; }
-  const a = document.createElement('a');
-  a.href = url; a.download = `${currentKid.replace(/\s+/g,'_')}_art.webp`;
-  a.target='_blank'; a.click();
-  toast('Image saved! 🎉');
+  toast('Saving... ⏳');
+  try {
+    const res = await fetch(`${API}/api/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageUrl: url, kidName: currentKid })
+    });
+    const data = await res.json();
+    const finalUrl = data.savedUrl || url;
+    // Update stored URL to permanent Cloudinary URL
+    currentSession.currentImage = finalUrl;
+    currentSession.images[currentSession.images.length - 1] = finalUrl;
+    saveLocal();
+    // Trigger download
+    const a = document.createElement('a');
+    a.href = finalUrl; a.download = `${currentKid.replace(/\s+/g,'_')}_art.webp`;
+    a.target='_blank'; a.click();
+    toast('Image saved! 🎉');
+  } catch(e) {
+    toast('Save failed, try again');
+  }
 }
 
 // ── DOM helpers ───────────────────────────────────────────
