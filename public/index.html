@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Art with AI – IAGS Kids</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sky:#4FC3F7;--sun:#FFD54F;--coral:#FF7043;
+  --mint:#66BB6A;--purple:#7C4DFF;--pink:#F06292;
+  --cream:#FFFDE7;--ink:#1A237E;--card:#fff;
+  --radius:24px;--shadow:0 8px 32px rgba(0,0,0,.12);
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Nunito',sans-serif;
+  background:linear-gradient(160deg,#B3E5FC 0%,#E1F5FE 40%,#F3E5F5 100%);
+  display:flex;align-items:center;justify-content:center;
+}
+.screen{display:none;width:100%;height:100vh;overflow-y:auto;padding:20px;
+  flex-direction:column;align-items:center;justify-content:center}
+.screen.active{display:flex}
+
+/* ── LOGIN ── */
+#loginScreen{gap:0}
+.login-card{
+  background:var(--card);border-radius:36px;
+  box-shadow:0 20px 60px rgba(0,0,0,.15),0 0 0 4px var(--sun);
+  padding:48px 44px;max-width:460px;width:100%;text-align:center;
+  position:relative;overflow:hidden;
+}
+.login-card::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:200px;height:200px;
+  background:radial-gradient(circle,rgba(255,213,79,.3),transparent 70%);
+  border-radius:50%;
+}
+.login-mascot{font-size:80px;animation:bounce 2s ease-in-out infinite;display:block;margin-bottom:8px}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.login-card h1{font-family:'Baloo 2',sans-serif;font-weight:900;font-size:36px;color:var(--ink);line-height:1.1;margin-bottom:6px}
+.login-card h1 span{color:var(--purple)}
+.login-subtitle{color:#777;font-size:15px;font-weight:600;margin-bottom:32px}
+.name-label{display:block;text-align:left;font-weight:800;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink);margin-bottom:8px}
+.name-input{
+  width:100%;padding:16px 20px;font-size:20px;font-family:'Baloo 2',sans-serif;
+  font-weight:700;border:3px solid #e0e0e0;border-radius:16px;outline:none;
+  transition:border-color .2s;color:var(--ink);background:#fafafa;
+}
+.name-input:focus{border-color:var(--purple);background:#fff}
+.name-input::placeholder{color:#bbb;font-weight:600}
+.start-btn{
+  margin-top:20px;width:100%;padding:16px;
+  background:linear-gradient(135deg,var(--purple),#512DA8);
+  color:#fff;border:none;border-radius:16px;cursor:pointer;
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:20px;
+  box-shadow:0 8px 24px rgba(124,77,255,.35);
+  transition:transform .15s,box-shadow .15s;
+}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(124,77,255,.45)}
+.start-btn:active{transform:translateY(0)}
+.server-status{margin-top:16px;font-size:12px;color:#bbb;font-weight:600}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#bbb;margin-right:5px}
+.status-dot.ok{background:#66BB6A}
+.status-dot.err{background:#FF7043}
+
+/* ── GALLERY ── */
+#galleryScreen{justify-content:flex-start;padding:0}
+.gallery-header{
+  width:100%;background:linear-gradient(135deg,var(--purple),#512DA8);
+  padding:20px 28px;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 4px 20px rgba(0,0,0,.15);flex-shrink:0;
+}
+.gallery-header-left{display:flex;align-items:center;gap:12px}
+.header-mascot{font-size:36px}
+.header-title{font-family:'Baloo 2',sans-serif;font-weight:900;font-size:22px;color:#fff}
+.header-sub{font-size:12px;color:rgba(255,255,255,.75);font-weight:700}
+.new-btn{
+  background:var(--sun);color:var(--ink);border:none;border-radius:50%;
+  width:52px;height:52px;font-size:28px;cursor:pointer;font-weight:900;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);transition:transform .15s;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.new-btn:hover{transform:scale(1.1)}
+.gallery-body{flex:1;width:100%;padding:20px;overflow-y:auto}
+.gallery-empty{text-align:center;padding:60px 20px}
+.gallery-empty-icon{font-size:80px;display:block;margin-bottom:16px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.gallery-empty h2{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:24px;color:var(--ink);margin-bottom:8px}
+.gallery-empty p{color:#888;font-size:15px;font-weight:600}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.gallery-item{
+  background:var(--card);border-radius:20px;overflow:hidden;
+  box-shadow:var(--shadow);cursor:pointer;transition:transform .2s,box-shadow .2s;
+}
+.gallery-item:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.15)}
+.gallery-item img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.gallery-item-info{padding:12px}
+.gallery-item-prompt{font-size:12px;font-weight:700;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gallery-item-count{font-size:11px;color:#aaa;margin-top:2px;font-weight:600}
+
+/* ── CHAT ── */
+#chatScreen{justify-content:flex-start;padding:0}
+.chat-header{
+  width:100%;background:linear-gradient(135deg,var(--coral),#E64A19);
+  padding:16px 20px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 4px 20px rgba(0,0,0,.15);flex-shrink:0;
+}
+.back-btn{
+  background:rgba(255,255,255,.2);color:#fff;border:none;
+  border-radius:12px;padding:8px 14px;font-size:14px;font-weight:800;
+  cursor:pointer;font-family:'Nunito',sans-serif;transition:background .15s;
+}
+.back-btn:hover{background:rgba(255,255,255,.3)}
+.chat-title{font-family:'Baloo 2',sans-serif;font-weight:900;font-size:20px;color:#fff}
+.chat-counter{margin-left:auto;background:rgba(255,255,255,.2);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:800}
+.chat-body{flex:1;width:100%;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+.chat-footer{width:100%;padding:16px;background:#fff;box-shadow:0 -4px 20px rgba(0,0,0,.08);flex-shrink:0}
+.chat-input-row{display:flex;gap:10px;align-items:flex-end}
+.chat-input{
+  flex:1;padding:14px 18px;font-size:16px;font-family:'Nunito',sans-serif;font-weight:700;
+  border:3px solid #e0e0e0;border-radius:16px;outline:none;resize:none;
+  max-height:120px;transition:border-color .2s;color:var(--ink);line-height:1.4;
+}
+.chat-input:focus{border-color:var(--coral)}
+.chat-input::placeholder{color:#bbb;font-weight:600}
+.send-btn{
+  background:linear-gradient(135deg,var(--coral),#E64A19);color:#fff;border:none;
+  border-radius:14px;width:52px;height:52px;font-size:22px;cursor:pointer;
+  box-shadow:0 4px 16px rgba(255,112,67,.35);transition:transform .15s;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.send-btn:hover{transform:scale(1.05)}
+.send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.hint-text{font-size:11px;color:#bbb;margin-top:8px;font-weight:600;text-align:center}
+
+/* ── BUBBLES ── */
+.msg{display:flex;gap:10px;max-width:85%;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg.bot{align-self:flex-start}
+.msg-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.msg.bot .msg-avatar{background:linear-gradient(135deg,var(--purple),#512DA8)}
+.msg.user .msg-avatar{background:linear-gradient(135deg,var(--mint),#388E3C)}
+.msg-bubble{padding:12px 16px;border-radius:20px;font-size:15px;font-weight:700;line-height:1.4}
+.msg.bot .msg-bubble{background:var(--card);color:var(--ink);border-bottom-left-radius:4px;box-shadow:var(--shadow)}
+.msg.user .msg-bubble{background:linear-gradient(135deg,var(--mint),#388E3C);color:#fff;border-bottom-right-radius:4px}
+.msg-image{max-width:100%;border-radius:16px;display:block;margin-top:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);cursor:pointer}
+.save-btn{margin-top:10px;padding:8px 18px;background:var(--sun);color:var(--ink);border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;font-family:'Nunito',sans-serif;transition:transform .15s}
+.save-btn:hover{transform:scale(1.05)}
+
+/* ── TYPING ── */
+.typing{display:flex;gap:5px;align-items:center;padding:14px 18px}
+.typing span{width:8px;height:8px;background:#ccc;border-radius:50%;animation:typingDot .9s ease-in-out infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes typingDot{0%,80%,100%{transform:scale(.8);opacity:.4}40%{transform:scale(1.2);opacity:1}}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;padding:10px 24px;border-radius:40px;
+  font-weight:800;font-size:14px;opacity:0;transition:all .3s;z-index:200;
+  pointer-events:none;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="screen active" id="loginScreen">
+  <div class="login-card">
+    <span class="login-mascot">🎨</span>
+    <h1>Art with <span>AI</span></h1>
+    <p class="login-subtitle">Type your name and start creating magical pictures!</p>
+    <label class="name-label" for="nameInput">Your Full Name</label>
+    <input class="name-input" id="nameInput" type="text"
+      placeholder="e.g. Priya Sharma" autocomplete="off" maxlength="60"/>
+    <button class="start-btn" onclick="startApp()">Let's Create! 🚀</button>
+    <p class="server-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Checking server...</span>
+    </p>
+  </div>
+</div>
+
+<!-- GALLERY -->
+<div class="screen" id="galleryScreen">
+  <div class="gallery-header">
+    <div class="gallery-header-left">
+      <span class="header-mascot">🎨</span>
+      <div>
+        <div class="header-title" id="galleryTitle">My Creations</div>
+        <div class="header-sub" id="gallerySubtitle">0 images created</div>
+      </div>
+    </div>
+    <button class="new-btn" onclick="openChat()" title="Create new image">+</button>
+  </div>
+  <div class="gallery-body" id="galleryBody"></div>
+</div>
+
+<!-- CHAT -->
+<div class="screen" id="chatScreen">
+  <div class="chat-header">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <span class="chat-title">✨ Create Magic</span>
+    <div class="chat-counter" id="chatCounter">0 / 10</div>
+  </div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-footer">
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chatInput"
+        placeholder="What do you want to draw? Try: a flying elephant with rainbow wings 🐘"
+        rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendPrompt()">🎨</button>
+    </div>
+    <p class="hint-text" id="hintText">Press Enter or 🎨 to generate • Up to 10 prompts per image</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// All API calls go to our own server — no keys in frontend
+const API = '';  // same origin
+
+let currentKid = '';
+let currentSession = null;
+let allSessions = {};
+
+// ── Init ──────────────────────────────────────────────────
+(async function init(){
+  const saved = localStorage.getItem('iags_sessions');
+  if (saved) allSessions = JSON.parse(saved);
+  // Health check
+  try {
+    const r = await fetch(`${API}/api/health`);
+    const data = await r.json();
+    if (data.ok) {
+      document.getElementById('statusDot').className = 'status-dot ok';
+      document.getElementById('statusText').textContent =
+        data.cloudinary ? 'Server ready ✅ • Images will be saved' : 'Server ready ✅';
+    }
+  } catch(e) {
+    document.getElementById('statusDot').className = 'status-dot err';
+    document.getElementById('statusText').textContent = 'Cannot reach server ❌';
+  }
+})();
+
+// ── Screens ───────────────────────────────────────────────
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Login ─────────────────────────────────────────────────
+function startApp(){
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name || name.length < 2) { toast('Please enter your full name 😊'); return; }
+  currentKid = name;
+  if (!allSessions[currentKid]) allSessions[currentKid] = [];
+  loadGallery();
+  show('galleryScreen');
+}
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startApp();
+});
+
+// ── Gallery ───────────────────────────────────────────────
+function loadGallery(){
+  const sessions = allSessions[currentKid] || [];
+  const total = sessions.reduce((a,s) => a + s.images.length, 0);
+  document.getElementById('galleryTitle').textContent = `${currentKid}'s Art`;
+  document.getElementById('gallerySubtitle').textContent = `${total} image${total!==1?'s':''} created`;
+
+  const body = document.getElementById('galleryBody');
+  if (!sessions.length) {
+    body.innerHTML = `<div class="gallery-empty">
+      <span class="gallery-empty-icon">🌟</span>
+      <h2>Your canvas is empty!</h2>
+      <p>Press <strong>+</strong> to create your first magical picture</p>
+    </div>`;
+    return;
+  }
+  let items = [];
+  sessions.forEach(s => s.images.forEach((img,i) => items.push({img, prompt: s.prompts[i]||''})));
+  body.innerHTML = `<div class="gallery-grid">${
+    items.reverse().map(it => `
+      <div class="gallery-item" onclick="window.open('${it.img}','_blank')">
+        <img src="${it.img}" alt="AI art" loading="lazy"/>
+        <div class="gallery-item-info">
+          <div class="gallery-item-prompt">${escHtml(it.prompt)}</div>
+          <div class="gallery-item-count">✨ AI generated</div>
+        </div>
+      </div>`).join('')
+  }</div>`;
+}
+
+// ── Chat ──────────────────────────────────────────────────
+function openChat(){
+  currentSession = { id: Date.now(), prompts:[], images:[], currentImage: null };
+  document.getElementById('chatBody').innerHTML = '';
+  document.getElementById('chatInput').value = '';
+  updateCounter();
+  addBotMsg(`Hi ${currentKid.split(' ')[0]}! 🎉 I'm your AI art buddy!<br>Tell me what you want to draw — the more fun the better!<br><em>Try: "a dragon eating ice cream" 🐉🍦</em>`);
+  show('chatScreen');
+  setTimeout(() => document.getElementById('chatInput').focus(), 300);
+}
+
+function goBack(){ loadGallery(); show('galleryScreen'); }
+
+function updateCounter(){
+  const n = currentSession.prompts.length;
+  document.getElementById('chatCounter').textContent = `${n} / 10`;
+  const maxed = n >= 10;
+  document.getElementById('hintText').textContent = maxed
+    ? '🎉 Max prompts reached! Save your image or go back.'
+    : `Press Enter or 🎨 to generate • ${10-n} prompt${10-n!==1?'s':''} left`;
+  document.getElementById('sendBtn').disabled = maxed;
+  document.getElementById('chatInput').disabled = maxed;
+}
+
+function handleKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendPrompt();} }
+function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+
+async function sendPrompt(){
+  const input = document.getElementById('chatInput');
+  const prompt = input.value.trim();
+  if (!prompt) return;
+  if (currentSession.prompts.length >= 10) { toast('Max 10 prompts reached!'); return; }
+
+  input.value=''; input.style.height='auto';
+  document.getElementById('sendBtn').disabled = true;
+
+  addUserMsg(prompt);
+  currentSession.prompts.push(prompt);
+  updateCounter();
+
+  const typing = addTyping();
+  try {
+    const res = await fetch(`${API}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        inputImage: currentSession.currentImage,
+        kidName: currentKid
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error');
+
+    typing.remove();
+    currentSession.currentImage = data.imageUrl;
+    currentSession.images.push(data.imageUrl);
+    saveLocal();
+    addBotImage(data.imageUrl);
+  } catch(err) {
+    typing.remove();
+    addBotMsg(`Oops! Something went wrong 😅<br><small>${err.message}</small>`);
+    currentSession.prompts.pop();
+    updateCounter();
+  }
+  if (currentSession.prompts.length < 10)
+    document.getElementById('sendBtn').disabled = false;
+}
+
+// ── Storage ───────────────────────────────────────────────
+function saveLocal(){
+  if (!allSessions[currentKid]) allSessions[currentKid] = [];
+  const i = allSessions[currentKid].findIndex(s => s.id === currentSession.id);
+  if (i >= 0) allSessions[currentKid][i] = currentSession;
+  else allSessions[currentKid].push(currentSession);
+  try { localStorage.setItem('iags_sessions', JSON.stringify(allSessions)); } catch(e){}
+}
+
+function saveCurrentImage(){
+  const url = currentSession.currentImage;
+  if (!url) { toast('No image yet!'); return; }
+  const a = document.createElement('a');
+  a.href = url; a.download = `${currentKid.replace(/\s+/g,'_')}_art.webp`;
+  a.target='_blank'; a.click();
+  toast('Image saved! 🎉');
+}
+
+// ── DOM helpers ───────────────────────────────────────────
+function addUserMsg(text){
+  const d = document.createElement('div');
+  d.className='msg user';
+  d.innerHTML=`<div class="msg-avatar">😊</div><div class="msg-bubble">${escHtml(text)}</div>`;
+  document.getElementById('chatBody').appendChild(d); scrollChat();
+}
+function addBotMsg(html){
+  const d = document.createElement('div');
+  d.className='msg bot';
+  d.innerHTML=`<div class="msg-avatar">🤖</div><div class="msg-bubble">${html}</div>`;
+  document.getElementById('chatBody').appendChild(d); scrollChat(); return d;
+}
+function addBotImage(url){
+  const d = document.createElement('div');
+  d.className='msg bot';
+  d.innerHTML=`<div class="msg-avatar">🤖</div>
+    <div class="msg-bubble">Here's your magical picture! ✨<br>
+      <img class="msg-image" src="${url}" alt="AI art"/>
+      <br><button class="save-btn" onclick="saveCurrentImage()">💾 Save Image</button>
+      ${currentSession.prompts.length<10?'<br><small style="color:#999;display:block;margin-top:6px">Want to change something? Just tell me! 🎨</small>':''}
+    </div>`;
+  document.getElementById('chatBody').appendChild(d); scrollChat();
+}
+function addTyping(){
+  const d = document.createElement('div');
+  d.className='msg bot';
+  d.innerHTML=`<div class="msg-avatar">🤖</div>
+    <div class="msg-bubble">
+      <div class="typing"><span></span><span></span><span></span></div>
+      <small style="color:#aaa">Creating your picture... ✨</small>
+    </div>`;
+  document.getElementById('chatBody').appendChild(d); scrollChat(); return d;
+}
+function scrollChat(){
+  const b = document.getElementById('chatBody');
+  requestAnimationFrame(()=>{ b.scrollTop = b.scrollHeight; });
+}
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
