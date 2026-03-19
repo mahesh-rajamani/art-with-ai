@@ -92,12 +92,12 @@ async function generateImage(prompt, allPrompts, inputImage) {
   if (isRefinement) {
     // Full accumulated description gives Flux Dev proper context
     const cumulativePrompt = [...allPrompts, prompt].join(', ');
-    model = 'black-forest-labs/flux-dev';
+    model = 'black-forest-labs/flux-kontext-dev';
     body = {
       input: {
         prompt: cumulativePrompt,
         image: inputImage,
-        strength: 0.5,           // was 0.75 — lower = respects prev image more
+        strength: 0.75,           // was 0.75 — lower = respects prev image more
         num_inference_steps: 28,
         guidance: 3.5,
         output_format: 'webp',
