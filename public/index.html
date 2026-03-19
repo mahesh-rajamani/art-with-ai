@@ -473,7 +473,9 @@ async function sendPrompt(){
     typing.remove();
     currentSession.currentImage = data.imageUrl;
     currentSession.images.push(data.imageUrl);
-    addBotImage(data.imageUrl);
+    // Pass the image URL and its prompt index so Save button saves the right image
+    const promptIdx = currentSession.prompts.length - 1;
+    addBotImage(data.imageUrl, promptIdx);
   } catch(err) {
     typing.remove();
     addBotMsg(`Oops! Something went wrong 😅<br><small>${err.message}</small>`);
@@ -486,25 +488,24 @@ async function sendPrompt(){
 
 // ── Storage: handled server-side via Astra DB ────────────
 
-async function saveCurrentImage(){
-  const url = currentSession.currentImage;
+async function saveCurrentImage(url, promptIdx){
+  // url and promptIdx are passed from the specific Save button clicked
+  // falls back to last image if called without args
+  url = url || currentSession.currentImage;
+  const prompt = promptIdx !== undefined
+    ? (currentSession.prompts[promptIdx] || '')
+    : (currentSession.prompts[currentSession.prompts.length - 1] || '');
+
   if (!url) { toast('No image yet!'); return; }
   toast('Saving... ⏳');
   try {
     const res = await fetch(`${API}/api/save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        imageUrl: url,
-        kidName: currentKid,
-        prompt: currentSession.prompts[currentSession.prompts.length - 1] || ''
-      })
+      body: JSON.stringify({ imageUrl: url, kidName: currentKid, prompt })
     });
     const data = await res.json();
     const finalUrl = data.savedUrl || url;
-    // Update stored URL to permanent Cloudinary URL
-    currentSession.currentImage = finalUrl;
-    currentSession.images[currentSession.images.length - 1] = finalUrl;
     // Trigger download
     const a = document.createElement('a');
     a.href = finalUrl; a.download = `${currentKid.replace(/\s+/g,'_')}_art.webp`;
@@ -528,13 +529,15 @@ function addBotMsg(html){
   d.innerHTML=`<div class="msg-avatar">🤖</div><div class="msg-bubble">${html}</div>`;
   document.getElementById('chatBody').appendChild(d); scrollChat(); return d;
 }
-function addBotImage(url){
+function addBotImage(url, promptIdx){
   const d = document.createElement('div');
   d.className='msg bot';
+  // Encode url safely for inline onclick
+  const safeUrl = url.replace(/'/g, "\'");
   d.innerHTML=`<div class="msg-avatar">🤖</div>
     <div class="msg-bubble">Here's your magical picture! ✨<br>
       <img class="msg-image" src="${url}" alt="AI art"/>
-      <br><button class="save-btn" onclick="saveCurrentImage()">💾 Save Image</button>
+      <br><button class="save-btn" onclick="saveCurrentImage('${safeUrl}', ${promptIdx})">💾 Save Image</button>
       ${currentSession.prompts.length<10?'<br><small style="color:#999;display:block;margin-top:6px">Want to change something? Just tell me! 🎨</small>':''}
     </div>`;
   document.getElementById('chatBody').appendChild(d); scrollChat();
