@@ -108,6 +108,20 @@ body{
 .gallery-dl-btn.view{background:#f0f0f0;color:#555}
 .gallery-dl-btn.save{background:var(--sun);color:var(--ink)}
 
+/* ── PAGINATION ── */
+.gallery-pagination{
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;padding:16px 20px 4px;flex-shrink:0;
+}
+.page-btn{
+  background:var(--card);border:2px solid #e0e0e0;color:var(--ink);
+  border-radius:12px;padding:8px 18px;font-size:14px;font-weight:800;
+  cursor:pointer;font-family:'Nunito',sans-serif;transition:all .15s;
+}
+.page-btn:hover:not(:disabled){background:var(--purple);color:#fff;border-color:var(--purple)}
+.page-btn:disabled{opacity:.3;cursor:not-allowed}
+.page-info{font-size:13px;font-weight:800;color:#888;min-width:80px;text-align:center}
+
 /* ── CHAT ── */
 #chatScreen{justify-content:flex-start;padding:0}
 .chat-header{
@@ -229,6 +243,11 @@ body{
     </div>
     <button class="new-btn" onclick="openChat()" title="Create new image">+</button>
   </div>
+  <div class="gallery-pagination" id="galleryPagination" style="display:none">
+    <button class="page-btn" id="prevBtn" onclick="changePage(-1)">← Prev</button>
+    <span class="page-info" id="pageInfo"></span>
+    <button class="page-btn" id="nextBtn" onclick="changePage(1)">Next →</button>
+  </div>
   <div class="gallery-body" id="galleryBody"></div>
 </div>
 
@@ -269,12 +288,9 @@ const API = '';  // same origin
 
 let currentKid = '';
 let currentSession = null;
-let allSessions = {};
 
 // ── Init ──────────────────────────────────────────────────
 (async function init(){
-  const saved = localStorage.getItem('iags_sessions');
-  if (saved) allSessions = JSON.parse(saved);
   // Health check
   try {
     const r = await fetch(`${API}/api/health`);
@@ -282,7 +298,7 @@ let allSessions = {};
     if (data.ok) {
       document.getElementById('statusDot').className = 'status-dot ok';
       document.getElementById('statusText').textContent =
-        data.cloudinary ? 'Server ready ✅ • Images will be saved' : 'Server ready ✅';
+        data.astra ? 'Server ready ✅ • Images saved to cloud' : 'Server ready ✅';
     }
   } catch(e) {
     document.getElementById('statusDot').className = 'status-dot err';
@@ -301,7 +317,6 @@ function startApp(){
   const name = document.getElementById('nameInput').value.trim();
   if (!name || name.length < 2) { toast('Please enter your full name 😊'); return; }
   currentKid = name;
-  if (!allSessions[currentKid]) allSessions[currentKid] = [];
   loadGallery();
   show('galleryScreen');
 }
@@ -309,38 +324,80 @@ document.getElementById('nameInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') startApp();
 });
 
-// ── Gallery ───────────────────────────────────────────────
-function loadGallery(){
-  const sessions = allSessions[currentKid] || [];
-  const total = sessions.reduce((a,s) => a + s.images.length, 0);
-  document.getElementById('galleryTitle').textContent = `${currentKid}'s Art`;
-  document.getElementById('gallerySubtitle').textContent = `${total} image${total!==1?'s':''} created`;
+// ── Gallery (server-side paginated via Astra DB) ─────────
+// Simple page number — server uses skip = page * 10, limit = 10, sort timestamp desc
+let currentPage  = 0;
+let galleryTotal = 0;
 
-  const body = document.getElementById('galleryBody');
-  if (!sessions.length) {
-    body.innerHTML = `<div class="gallery-empty">
-      <span class="gallery-empty-icon">🌟</span>
-      <h2>Your canvas is empty!</h2>
-      <p>Press <strong>+</strong> to create your first magical picture</p>
-    </div>`;
-    return;
-  }
-  let items = [];
-  sessions.forEach(s => s.images.forEach((img,i) => items.push({img, prompt: s.prompts[i]||''})));
-  body.innerHTML = `<div class="gallery-grid">${
-    items.reverse().map((it,idx) => `
-      <div class="gallery-item">
-        <img src="${it.img}" alt="AI art" loading="lazy" onclick="window.open('${it.img}','_blank')" style="cursor:zoom-in"/>
-        <div class="gallery-item-info">
-          <div class="gallery-item-prompt">${escHtml(it.prompt)}</div>
-          <div class="gallery-item-count">✨ AI generated</div>
-          <div class="gallery-item-actions">
-            <button class="gallery-dl-btn view" onclick="window.open('${it.img}','_blank')">🔍 View</button>
-            <button class="gallery-dl-btn save" onclick="downloadGalleryImage('${it.img}', ${idx})">💾 Save</button>
+async function loadGallery(){
+  document.getElementById('galleryTitle').textContent = `${currentKid}'s Art`;
+  document.getElementById('gallerySubtitle').textContent = 'Loading...';
+  currentPage = 0;
+  await fetchGalleryPage();
+}
+
+async function changePage(dir){
+  currentPage = Math.max(0, currentPage + dir);
+  await fetchGalleryPage();
+  document.getElementById('galleryBody').scrollTop = 0;
+}
+
+async function fetchGalleryPage(){
+  const body       = document.getElementById('galleryBody');
+  const pagination = document.getElementById('galleryPagination');
+  body.innerHTML   = `<div style="text-align:center;padding:60px 20px;color:#aaa;font-weight:700">Loading... ✨</div>`;
+
+  try {
+    const res = await fetch(`${API}/api/gallery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kid: currentKid, page: currentPage })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    galleryTotal = data.total;
+    document.getElementById('gallerySubtitle').textContent =
+      `${galleryTotal} image${galleryTotal !== 1 ? 's' : ''} created`;
+
+    const totalPages = data.totalPages || 0;
+    pagination.style.display = totalPages > 1 ? 'flex' : 'none';
+    document.getElementById('pageInfo').textContent = `${currentPage + 1} / ${totalPages}`;
+    document.getElementById('prevBtn').disabled = currentPage === 0;
+    document.getElementById('nextBtn').disabled = currentPage >= totalPages - 1;
+
+    if (!data.items.length && currentPage === 0) {
+      body.innerHTML = `<div class="gallery-empty">
+        <span class="gallery-empty-icon">🌟</span>
+        <h2>Your canvas is empty!</h2>
+        <p>Press <strong>+</strong> to create your first magical picture</p>
+      </div>`;
+      return;
+    }
+
+    body.innerHTML = `<div class="gallery-grid">${
+      data.items.map((it, i) => `
+        <div class="gallery-item">
+          <img src="${it.url}" alt="AI art" loading="lazy"
+            onclick="window.open('${it.url}','_blank')" style="cursor:zoom-in"/>
+          <div class="gallery-item-info">
+            <div class="gallery-item-prompt">${escHtml(it.prompt)}</div>
+            <div class="gallery-item-count">✨ AI generated</div>
+            <div class="gallery-item-actions">
+              <button class="gallery-dl-btn view" onclick="window.open('${it.url}','_blank')">🔍 View</button>
+              <button class="gallery-dl-btn save" onclick="downloadGalleryImage('${it.url}', ${i})">💾 Save</button>
+            </div>
           </div>
-        </div>
-      </div>`).join('')
-  }</div>`;
+        </div>`).join('')
+    }</div>`;
+
+  } catch(e) {
+    body.innerHTML = `<div class="gallery-empty">
+      <span class="gallery-empty-icon">😅</span>
+      <h2>Couldn't load images</h2>
+      <p>${escHtml(e.message)}</p>
+    </div>`;
+  }
 }
 
 // ── Chat ──────────────────────────────────────────────────
@@ -354,7 +411,7 @@ function openChat(){
   setTimeout(() => document.getElementById('chatInput').focus(), 300);
 }
 
-function goBack(){ loadGallery(); show('galleryScreen'); }
+function goBack(){ show('galleryScreen'); loadGallery(); }
 
 function updateCounter(){
   const n = currentSession.prompts.length;
@@ -416,7 +473,6 @@ async function sendPrompt(){
     typing.remove();
     currentSession.currentImage = data.imageUrl;
     currentSession.images.push(data.imageUrl);
-    saveLocal();
     addBotImage(data.imageUrl);
   } catch(err) {
     typing.remove();
@@ -428,14 +484,7 @@ async function sendPrompt(){
     document.getElementById('sendBtn').disabled = false;
 }
 
-// ── Storage ───────────────────────────────────────────────
-function saveLocal(){
-  if (!allSessions[currentKid]) allSessions[currentKid] = [];
-  const i = allSessions[currentKid].findIndex(s => s.id === currentSession.id);
-  if (i >= 0) allSessions[currentKid][i] = currentSession;
-  else allSessions[currentKid].push(currentSession);
-  try { localStorage.setItem('iags_sessions', JSON.stringify(allSessions)); } catch(e){}
-}
+// ── Storage: handled server-side via Astra DB ────────────
 
 async function saveCurrentImage(){
   const url = currentSession.currentImage;
@@ -445,14 +494,17 @@ async function saveCurrentImage(){
     const res = await fetch(`${API}/api/save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageUrl: url, kidName: currentKid })
+      body: JSON.stringify({
+        imageUrl: url,
+        kidName: currentKid,
+        prompt: currentSession.prompts[currentSession.prompts.length - 1] || ''
+      })
     });
     const data = await res.json();
     const finalUrl = data.savedUrl || url;
     // Update stored URL to permanent Cloudinary URL
     currentSession.currentImage = finalUrl;
     currentSession.images[currentSession.images.length - 1] = finalUrl;
-    saveLocal();
     // Trigger download
     const a = document.createElement('a');
     a.href = finalUrl; a.download = `${currentKid.replace(/\s+/g,'_')}_art.webp`;
