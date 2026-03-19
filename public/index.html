@@ -99,6 +99,14 @@ body{
 .gallery-item-info{padding:12px}
 .gallery-item-prompt{font-size:12px;font-weight:700;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gallery-item-count{font-size:11px;color:#aaa;margin-top:2px;font-weight:600}
+.gallery-item-actions{display:flex;gap:6px;margin-top:8px}
+.gallery-dl-btn{
+  flex:1;padding:6px 10px;border:none;border-radius:8px;font-size:12px;font-weight:800;
+  cursor:pointer;font-family:'Nunito',sans-serif;transition:transform .15s,opacity .15s;
+}
+.gallery-dl-btn:hover{transform:scale(1.04);opacity:.9}
+.gallery-dl-btn.view{background:#f0f0f0;color:#555}
+.gallery-dl-btn.save{background:var(--sun);color:var(--ink)}
 
 /* ── CHAT ── */
 #chatScreen{justify-content:flex-start;padding:0}
@@ -290,12 +298,16 @@ function loadGallery(){
   let items = [];
   sessions.forEach(s => s.images.forEach((img,i) => items.push({img, prompt: s.prompts[i]||''})));
   body.innerHTML = `<div class="gallery-grid">${
-    items.reverse().map(it => `
-      <div class="gallery-item" onclick="window.open('${it.img}','_blank')">
-        <img src="${it.img}" alt="AI art" loading="lazy"/>
+    items.reverse().map((it,idx) => `
+      <div class="gallery-item">
+        <img src="${it.img}" alt="AI art" loading="lazy" onclick="window.open('${it.img}','_blank')" style="cursor:zoom-in"/>
         <div class="gallery-item-info">
           <div class="gallery-item-prompt">${escHtml(it.prompt)}</div>
           <div class="gallery-item-count">✨ AI generated</div>
+          <div class="gallery-item-actions">
+            <button class="gallery-dl-btn view" onclick="window.open('${it.img}','_blank')">🔍 View</button>
+            <button class="gallery-dl-btn save" onclick="downloadGalleryImage('${it.img}', ${idx})">💾 Save</button>
+          </div>
         </div>
       </div>`).join('')
   }</div>`;
@@ -444,6 +456,25 @@ function scrollChat(){
   const b = document.getElementById('chatBody');
   requestAnimationFrame(()=>{ b.scrollTop = b.scrollHeight; });
 }
+async function downloadGalleryImage(url, idx) {
+  try {
+    // Fetch the image and trigger a real download (works cross-origin)
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `${currentKid.replace(/\s+/g,'_')}_art_${idx+1}.webp`;
+    a.click();
+    URL.revokeObjectURL(blobUrl);
+    toast('Image downloaded! 🎉');
+  } catch(e) {
+    // Fallback: open in new tab if fetch fails (e.g. CORS)
+    window.open(url, '_blank');
+    toast('Opened in new tab — long press to save 📱');
+  }
+}
+
 function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toast(msg){
   const t = document.getElementById('toast');
