@@ -101,6 +101,26 @@
     border-radius: 12px; font-size: 1rem; cursor: pointer; font-weight: 700;
   }
 
+  /* ── Coloring page toggle ── */
+  .color-toggle-bar {
+    background: rgba(0,0,0,0.15); padding: 8px 16px;
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  .color-toggle-label { font-size: 0.85rem; font-weight: 700; color: rgba(255,255,255,0.95); display: flex; align-items: center; gap: 6px; }
+  .color-mode-hint { font-size: 0.75rem; color: rgba(255,255,255,0.75); }
+  .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; background: rgba(255,255,255,0.25);
+    border-radius: 24px; cursor: pointer; transition: 0.3s;
+  }
+  .toggle-slider:before {
+    content: ''; position: absolute; width: 18px; height: 18px;
+    left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.3s;
+  }
+  .toggle-switch input:checked + .toggle-slider { background: #FFD54F; }
+  .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); background: #555; }
+
   /* ── Chat screen ── */
   .chat-screen { display: none; flex-direction: column; height: 100vh; }
   .chat-screen.visible { display: flex !important; }
@@ -241,6 +261,16 @@
       <button class="gallery-btn" onclick="showGallery()">🖼️ Gallery</button>
     </div>
   </div>
+  <div class="color-toggle-bar">
+    <div class="color-toggle-label">
+      🖍️ Coloring Page Mode
+      <span class="color-mode-hint" id="colorModeHint"></span>
+    </div>
+    <label class="toggle-switch">
+      <input type="checkbox" id="coloringToggle" onchange="onColoringToggle()"/>
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
   <div class="chat-body" id="chatBody"></div>
   <div class="input-bar">
     <input id="promptInput" class="prompt-input" type="text"
@@ -293,10 +323,11 @@
 
     <div class="form-group">
       <label>Image Model</label>
-      <input id="googleModelInput" type="text" placeholder="gemini-2.0-flash-preview-image-generation"/>
+      <input id="googleModelInput" type="text" placeholder="gemini-2.5-flash-image"/>
       <small style="color:#888;font-size:0.78rem;margin-top:4px;display:block">
-        Free tier: <code>gemini-2.0-flash-preview-image-generation</code> &nbsp;|&nbsp;
-        Paid: <code>imagen-4.0-fast-generate-001</code> ($0.02/img)
+        Free tier: <code>gemini-2.5-flash-image</code> &nbsp;|&nbsp;
+        Paid: <code>imagen-4.0-fast-generate-001</code> ($0.02/img) &nbsp;|&nbsp;
+        <code>gemini-3.1-flash-image-preview</code> ($0.067/img)
       </small>
     </div>
 
@@ -320,6 +351,9 @@ let googleApiEnabled = false;
 
 // ── Boot ───────────────────────────────────────────────────
 (async () => {
+  // Always reset model to default — model names change too often to trust cached values
+  localStorage.removeItem('google_image_model');
+
   try {
     const r = await fetch('/api/config');
     const cfg = await r.json();
@@ -333,7 +367,7 @@ let googleApiEnabled = false;
 
 // ── Settings helpers ───────────────────────────────────────
 function getGoogleToken()  { return localStorage.getItem('google_api_token') || ''; }
-function getGoogleModel()  { return localStorage.getItem('google_image_model') || 'gemini-2.0-flash-preview-image-generation'; }
+function getGoogleModel()  { return localStorage.getItem('google_image_model') || 'gemini-2.5-flash-image'; }
 function isGoogleConfigured() { return !!getGoogleToken(); }
 
 function updateSettingsBadge() {
@@ -362,14 +396,14 @@ function closeSettings() {
 
 function saveSettings() {
   const token = document.getElementById('googleTokenInput').value.trim();
-  const model = document.getElementById('googleModelInput').value;
+  const model = document.getElementById('googleModelInput').value.trim();
   if (!token) { toast('Please enter your Google API token'); return; }
-  // Only store user-provided Google token in localStorage — Flux token stays server-side
+  if (!model) { toast('Please enter a model name'); return; }
   localStorage.setItem('google_api_token', token);
   localStorage.setItem('google_image_model', model);
   updateSettingsBadge();
   closeSettings();
-  toast('✅ Google API settings saved!');
+  toast(`✅ Saved! Using model: ${model}`);
 }
 
 function clearSettings() {
@@ -399,25 +433,40 @@ function backToWelcome() {
   document.getElementById('kidNameInput').value = '';
 }
 
+// ── Coloring page toggle ───────────────────────────────────
+const COLORING_SUFFIX = 'as a black and white coloring page, thick bold outlines, no color fill, white background, simple clean line art, printable';
+
+function onColoringToggle() {
+  const on = document.getElementById('coloringToggle').checked;
+  document.getElementById('colorModeHint').textContent = on ? '✅ ON' : '';
+  document.getElementById('promptInput').placeholder = on
+    ? 'Describe your coloring page... 🖍️'
+    : 'Describe your drawing... 🌈';
+  toast(on ? '🖍️ Coloring page mode ON!' : '🎨 Color mode ON!');
+}
+
 // ── Send prompt ────────────────────────────────────────────
 async function sendPrompt() {
   const input = document.getElementById('promptInput');
-  const prompt = input.value.trim();
-  if (!prompt) return;
+  const rawPrompt = input.value.trim();
+  if (!rawPrompt) return;
   if (currentSession.prompts.length >= 10) {
     toast("You've created 10 amazing pictures! Start fresh 🎉"); return;
   }
+
+  const isColoring = document.getElementById('coloringToggle').checked;
+  const prompt = isColoring ? `${rawPrompt}, ${COLORING_SUFFIX}` : rawPrompt;
 
   input.value = '';
   input.disabled = true;
   document.getElementById('sendBtn').disabled = true;
 
-  addUserMsg(prompt);
+  addUserMsg(rawPrompt); // show kid's original text, not the suffix
   const typingEl = addTyping();
 
   try {
     const body = {
-      prompt,
+      prompt,           // enriched with coloring suffix if toggle on
       allPrompts: currentSession.prompts,
       inputImage: currentSession.currentImage,
       kidName: currentKid
@@ -439,7 +488,7 @@ async function sendPrompt() {
 
     if (data.error) { addBotMsg(`😞 Oops! ${escHtml(data.error)}`); return; }
 
-    currentSession.prompts.push(prompt);
+    currentSession.prompts.push(rawPrompt);
     currentSession.currentImage = data.url;
     addBotImage(data.url, currentSession.prompts.length - 1);
   } catch(e) {
