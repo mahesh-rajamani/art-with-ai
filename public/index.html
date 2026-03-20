@@ -3,584 +3,603 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Art with AI – IAGS Kids</title>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<title>🎨 Art with AI</title>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --sky:#4FC3F7;--sun:#FFD54F;--coral:#FF7043;
-  --mint:#66BB6A;--purple:#7C4DFF;--pink:#F06292;
-  --cream:#FFFDE7;--ink:#1A237E;--card:#fff;
-  --radius:24px;--shadow:0 8px 32px rgba(0,0,0,.12);
-}
-html,body{height:100%;overflow:hidden}
-body{
-  font-family:'Nunito',sans-serif;
-  background:linear-gradient(160deg,#B3E5FC 0%,#E1F5FE 40%,#F3E5F5 100%);
-  display:flex;align-items:center;justify-content:center;
-}
-.screen{display:none;width:100%;height:100vh;overflow-y:auto;padding:20px;
-  flex-direction:column;align-items:center;justify-content:center}
-.screen.active{display:flex}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f4ff; min-height: 100vh; }
 
-/* ── LOGIN ── */
-#loginScreen{gap:0}
-.login-card{
-  background:var(--card);border-radius:36px;
-  box-shadow:0 20px 60px rgba(0,0,0,.15),0 0 0 4px var(--sun);
-  padding:48px 44px;max-width:460px;width:100%;text-align:center;
-  position:relative;overflow:hidden;
-}
-.login-card::before{
-  content:'';position:absolute;top:-60px;right:-60px;
-  width:200px;height:200px;
-  background:radial-gradient(circle,rgba(255,213,79,.3),transparent 70%);
-  border-radius:50%;
-}
-.login-mascot{font-size:80px;animation:bounce 2s ease-in-out infinite;display:block;margin-bottom:8px}
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-.login-card h1{font-family:'Baloo 2',sans-serif;font-weight:900;font-size:36px;color:var(--ink);line-height:1.1;margin-bottom:6px}
-.login-card h1 span{color:var(--purple)}
-.login-subtitle{color:#777;font-size:15px;font-weight:600;margin-bottom:32px}
-.name-label{display:block;text-align:left;font-weight:800;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink);margin-bottom:8px}
-.name-input{
-  width:100%;padding:16px 20px;font-size:20px;font-family:'Baloo 2',sans-serif;
-  font-weight:700;border:3px solid #e0e0e0;border-radius:16px;outline:none;
-  transition:border-color .2s;color:var(--ink);background:#fafafa;
-}
-.name-input:focus{border-color:var(--purple);background:#fff}
-.name-input::placeholder{color:#bbb;font-weight:600}
-.start-btn{
-  margin-top:20px;width:100%;padding:16px;
-  background:linear-gradient(135deg,var(--purple),#512DA8);
-  color:#fff;border:none;border-radius:16px;cursor:pointer;
-  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:20px;
-  box-shadow:0 8px 24px rgba(124,77,255,.35);
-  transition:transform .15s,box-shadow .15s;
-}
-.start-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(124,77,255,.45)}
-.start-btn:active{transform:translateY(0)}
-.server-status{margin-top:16px;font-size:12px;color:#bbb;font-weight:600}
-.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#bbb;margin-right:5px}
-.status-dot.ok{background:#66BB6A}
-.status-dot.err{background:#FF7043}
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+  .header h1 { font-size: 1.4rem; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
 
-/* ── GALLERY ── */
-#galleryScreen{justify-content:flex-start;padding:0}
-.gallery-header{
-  width:100%;background:linear-gradient(135deg,var(--purple),#512DA8);
-  padding:20px 28px;display:flex;align-items:center;justify-content:space-between;
-  box-shadow:0 4px 20px rgba(0,0,0,.15);flex-shrink:0;
-}
-.gallery-header-left{display:flex;align-items:center;gap:12px}
-.header-mascot{font-size:36px}
-.header-title{font-family:'Baloo 2',sans-serif;font-weight:900;font-size:22px;color:#fff}
-.header-sub{font-size:12px;color:rgba(255,255,255,.75);font-weight:700}
-.new-btn{
-  background:var(--sun);color:var(--ink);border:none;border-radius:50%;
-  width:52px;height:52px;font-size:28px;cursor:pointer;font-weight:900;
-  box-shadow:0 4px 16px rgba(0,0,0,.2);transition:transform .15s;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.new-btn:hover{transform:scale(1.1)}
-.gallery-body{flex:1;width:100%;padding:20px;overflow-y:auto}
-.gallery-empty{text-align:center;padding:60px 20px}
-.gallery-empty-icon{font-size:80px;display:block;margin-bottom:16px;animation:float 3s ease-in-out infinite}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-.gallery-empty h2{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:24px;color:var(--ink);margin-bottom:8px}
-.gallery-empty p{color:#888;font-size:15px;font-weight:600}
-.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
-.gallery-item{
-  background:var(--card);border-radius:20px;overflow:hidden;
-  box-shadow:var(--shadow);cursor:pointer;transition:transform .2s,box-shadow .2s;
-}
-.gallery-item:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.15)}
-.gallery-item img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
-.gallery-item-info{padding:12px}
-.gallery-item-prompt{font-size:12px;font-weight:700;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gallery-item-count{font-size:11px;color:#aaa;margin-top:2px;font-weight:600}
-.gallery-item-actions{display:flex;gap:6px;margin-top:8px}
-.gallery-dl-btn{
-  flex:1;padding:6px 10px;border:none;border-radius:8px;font-size:12px;font-weight:800;
-  cursor:pointer;font-family:'Nunito',sans-serif;transition:transform .15s,opacity .15s;
-}
-.gallery-dl-btn:hover{transform:scale(1.04);opacity:.9}
-.gallery-dl-btn.view{background:#f0f0f0;color:#555}
-.gallery-dl-btn.save{background:var(--sun);color:var(--ink)}
+  /* ── Settings icon ── */
+  .settings-btn {
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+    font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .settings-btn:hover { background: rgba(255,255,255,0.35); }
+  .settings-btn.configured { background: rgba(72,199,142,0.4); }
 
-/* ── PAGINATION ── */
-.gallery-pagination{
-  display:flex;align-items:center;justify-content:center;
-  gap:12px;padding:16px 20px 4px;flex-shrink:0;
-}
-.page-btn{
-  background:var(--card);border:2px solid #e0e0e0;color:var(--ink);
-  border-radius:12px;padding:8px 18px;font-size:14px;font-weight:800;
-  cursor:pointer;font-family:'Nunito',sans-serif;transition:all .15s;
-}
-.page-btn:hover:not(:disabled){background:var(--purple);color:#fff;border-color:var(--purple)}
-.page-btn:disabled{opacity:.3;cursor:not-allowed}
-.page-info{font-size:13px;font-weight:800;color:#888;min-width:80px;text-align:center}
+  /* ── Settings modal ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 16px; padding: 28px;
+    width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal h2 { font-size: 1.2rem; margin-bottom: 6px; color: #333; }
+  .modal-subtitle { font-size: 0.85rem; color: #888; margin-bottom: 20px; }
 
-/* ── CHAT ── */
-#chatScreen{justify-content:flex-start;padding:0}
-.chat-header{
-  width:100%;background:linear-gradient(135deg,var(--coral),#E64A19);
-  padding:16px 20px;display:flex;align-items:center;gap:12px;
-  box-shadow:0 4px 20px rgba(0,0,0,.15);flex-shrink:0;
-}
-.back-btn{
-  background:rgba(255,255,255,.2);color:#fff;border:none;
-  border-radius:12px;padding:8px 14px;font-size:14px;font-weight:800;
-  cursor:pointer;font-family:'Nunito',sans-serif;transition:background .15s;
-}
-.back-btn:hover{background:rgba(255,255,255,.3)}
-.chat-title{font-family:'Baloo 2',sans-serif;font-weight:900;font-size:20px;color:#fff}
-.chat-counter{margin-left:auto;background:rgba(255,255,255,.2);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:800}
-/* ── COLORING TOGGLE ── */
-.color-toggle-bar{
-  width:100%;background:rgba(0,0,0,.15);
-  padding:8px 20px;display:flex;align-items:center;justify-content:space-between;
-  flex-shrink:0;
-}
-.color-toggle-label{font-size:13px;font-weight:800;color:rgba(255,255,255,.9);display:flex;align-items:center;gap:6px}
-.toggle-switch{position:relative;width:48px;height:26px;flex-shrink:0}
-.toggle-switch input{opacity:0;width:0;height:0}
-.toggle-slider{
-  position:absolute;inset:0;background:rgba(255,255,255,.25);
-  border-radius:26px;cursor:pointer;transition:.3s;
-}
-.toggle-slider:before{
-  content:'';position:absolute;width:20px;height:20px;
-  left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;
-}
-.toggle-switch input:checked + .toggle-slider{background:#FFD54F}
-.toggle-switch input:checked + .toggle-slider:before{transform:translateX(22px);background:var(--ink)}
-.color-mode-hint{font-size:11px;color:rgba(255,255,255,.7);font-weight:700}
-.chat-body{flex:1;width:100%;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
-.chat-footer{width:100%;padding:16px;background:#fff;box-shadow:0 -4px 20px rgba(0,0,0,.08);flex-shrink:0}
-.chat-input-row{display:flex;gap:10px;align-items:flex-end}
-.chat-input{
-  flex:1;padding:14px 18px;font-size:16px;font-family:'Nunito',sans-serif;font-weight:700;
-  border:3px solid #e0e0e0;border-radius:16px;outline:none;resize:none;
-  max-height:120px;transition:border-color .2s;color:var(--ink);line-height:1.4;
-}
-.chat-input:focus{border-color:var(--coral)}
-.chat-input::placeholder{color:#bbb;font-weight:600}
-.send-btn{
-  background:linear-gradient(135deg,var(--coral),#E64A19);color:#fff;border:none;
-  border-radius:14px;width:52px;height:52px;font-size:22px;cursor:pointer;
-  box-shadow:0 4px 16px rgba(255,112,67,.35);transition:transform .15s;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.send-btn:hover{transform:scale(1.05)}
-.send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-.hint-text{font-size:11px;color:#bbb;margin-top:8px;font-weight:600;text-align:center}
+  .instructions {
+    background: #f0f7ff; border: 1px solid #c3dafe; border-radius: 10px;
+    padding: 14px; margin-bottom: 20px; font-size: 0.83rem; color: #2d3748; line-height: 1.6;
+  }
+  .instructions strong { color: #4c51bf; }
+  .instructions ol { padding-left: 18px; margin-top: 8px; }
+  .instructions li { margin-bottom: 4px; }
+  .instructions a { color: #4c51bf; }
 
-/* ── BUBBLES ── */
-.msg{display:flex;gap:10px;max-width:85%;animation:slideIn .3s ease}
-@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.msg.user{align-self:flex-end;flex-direction:row-reverse}
-.msg.bot{align-self:flex-start}
-.msg-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.msg.bot .msg-avatar{background:linear-gradient(135deg,var(--purple),#512DA8)}
-.msg.user .msg-avatar{background:linear-gradient(135deg,var(--mint),#388E3C)}
-.msg-bubble{padding:12px 16px;border-radius:20px;font-size:15px;font-weight:700;line-height:1.4}
-.msg.bot .msg-bubble{background:var(--card);color:var(--ink);border-bottom-left-radius:4px;box-shadow:var(--shadow)}
-.msg.user .msg-bubble{background:linear-gradient(135deg,var(--mint),#388E3C);color:#fff;border-bottom-right-radius:4px}
-.msg-image{max-width:100%;border-radius:16px;display:block;margin-top:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);cursor:pointer}
-.save-btn{margin-top:10px;padding:8px 18px;background:var(--sun);color:var(--ink);border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;font-family:'Nunito',sans-serif;transition:transform .15s}
-.save-btn:hover{transform:scale(1.05)}
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 6px; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 10px 12px; border: 1.5px solid #ddd; border-radius: 8px;
+    font-size: 0.9rem; outline: none; transition: border 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: #667eea; }
 
-/* ── TYPING ── */
-.typing{display:flex;gap:5px;align-items:center;padding:14px 18px}
-.typing span{width:8px;height:8px;background:#ccc;border-radius:50%;animation:typingDot .9s ease-in-out infinite}
-.typing span:nth-child(2){animation-delay:.2s}
-.typing span:nth-child(3){animation-delay:.4s}
-@keyframes typingDot{0%,80%,100%{transform:scale(.8);opacity:.4}40%{transform:scale(1.2);opacity:1}}
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-save {
+    flex: 1; background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; border: none; padding: 11px; border-radius: 8px;
+    font-size: 0.95rem; font-weight: 600; cursor: pointer;
+  }
+  .btn-clear {
+    background: #fff; color: #e53e3e; border: 1.5px solid #e53e3e;
+    padding: 11px 18px; border-radius: 8px; font-size: 0.9rem; cursor: pointer;
+  }
+  .btn-close {
+    background: #f7f7f7; color: #555; border: 1.5px solid #ddd;
+    padding: 11px 18px; border-radius: 8px; font-size: 0.9rem; cursor: pointer;
+  }
+  .status-badge {
+    display: inline-block; font-size: 0.78rem; padding: 3px 10px;
+    border-radius: 20px; margin-bottom: 16px; font-weight: 600;
+  }
+  .status-badge.configured { background: #c6f6d5; color: #276749; }
+  .status-badge.not-configured { background: #fed7d7; color: #9b2c2c; }
 
-/* ── TOAST ── */
-.toast{
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
-  background:var(--ink);color:#fff;padding:10px 24px;border-radius:40px;
-  font-weight:800;font-size:14px;opacity:0;transition:all .3s;z-index:200;
-  pointer-events:none;white-space:nowrap;
-}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px}
+  /* ── Kid select ── */
+  .kid-select-screen {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 80vh; padding: 20px; text-align: center;
+  }
+  .kid-select-screen h2 { font-size: 1.8rem; color: #4a5568; margin-bottom: 8px; }
+  .kid-select-screen p { color: #888; margin-bottom: 28px; }
+  .kid-input-row { display: flex; gap: 10px; width: 100%; max-width: 360px; }
+  .kid-input {
+    flex: 1; padding: 14px; border: 2px solid #cbd5e0; border-radius: 12px;
+    font-size: 1rem; outline: none; transition: border 0.2s;
+  }
+  .kid-input:focus { border-color: #667eea; }
+  .btn-start {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; border: none; padding: 14px 22px;
+    border-radius: 12px; font-size: 1rem; cursor: pointer; font-weight: 700;
+  }
+
+  /* ── Chat screen ── */
+  .chat-screen { display: none; flex-direction: column; height: 100vh; }
+  .chat-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white; padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .chat-header .kid-info { font-size: 0.9rem; opacity: 0.9; }
+  .chat-header .kid-name { font-size: 1.1rem; font-weight: 700; }
+  .btn-back {
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+  }
+
+  .chat-body {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 14px;
+    background: #f0f4ff;
+  }
+  .msg { display: flex; gap: 10px; align-items: flex-end; max-width: 85%; }
+  .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+  .msg.bot { align-self: flex-start; }
+  .msg-avatar { font-size: 1.5rem; flex-shrink: 0; }
+  .msg-bubble {
+    background: white; border-radius: 16px; padding: 12px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); font-size: 0.95rem; line-height: 1.5;
+  }
+  .msg.user .msg-bubble { background: #667eea; color: white; }
+  .msg-image { max-width: 260px; border-radius: 10px; display: block; margin-top: 8px; cursor: pointer; }
+  .save-btn {
+    margin-top: 10px; background: #48bb78; color: white; border: none;
+    padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+  }
+  .save-btn:hover { background: #38a169; }
+  .save-btn:disabled { background: #a0aec0; cursor: not-allowed; }
+
+  .typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+  .typing span {
+    width: 8px; height: 8px; background: #cbd5e0; border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100%{transform:scale(0.8)} 40%{transform:scale(1.2)} }
+
+  /* ── Input bar ── */
+  .input-bar {
+    padding: 12px 16px; background: white;
+    border-top: 1px solid #e2e8f0;
+    display: flex; gap: 10px; align-items: center;
+  }
+  .prompt-input {
+    flex: 1; padding: 12px 16px; border: 2px solid #e2e8f0;
+    border-radius: 24px; font-size: 0.95rem; outline: none; transition: border 0.2s;
+  }
+  .prompt-input:focus { border-color: #667eea; }
+  .btn-send {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; border: none; width: 46px; height: 46px;
+    border-radius: 50%; cursor: pointer; font-size: 1.1rem; flex-shrink: 0;
+  }
+  .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Gallery ── */
+  .gallery-btn {
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+  }
+  .gallery-screen { display: none; flex-direction: column; height: 100vh; }
+  .gallery-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .gallery-header h2 { flex: 1; font-size: 1.1rem; }
+  .gallery-grid {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;
+  }
+  .gallery-item { position: relative; border-radius: 10px; overflow: hidden; background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .gallery-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+  .gallery-item-info { padding: 8px; font-size: 0.75rem; color: #555; }
+  .gallery-item-info strong { display: block; color: #333; }
+  .gallery-dl-btn {
+    position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.55);
+    color: white; border: none; border-radius: 6px; padding: 4px 8px;
+    font-size: 0.75rem; cursor: pointer;
+  }
+  .gallery-pagination { display: flex; justify-content: center; gap: 10px; padding: 14px; }
+  .btn-page {
+    background: white; border: 1.5px solid #667eea; color: #667eea;
+    padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+  }
+  .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #2d3748; color: white; padding: 10px 20px; border-radius: 20px;
+    font-size: 0.9rem; opacity: 0; transition: all 0.3s; z-index: 999; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div class="screen active" id="loginScreen">
-  <div class="login-card">
-    <span class="login-mascot">🎨</span>
-    <h1>Art with <span>AI</span></h1>
-    <p class="login-subtitle">Type your name and start creating magical pictures!</p>
-    <label class="name-label" for="nameInput">Your Full Name</label>
-    <input class="name-input" id="nameInput" type="text"
-      placeholder="e.g. Priya Sharma" autocomplete="off" maxlength="60"/>
-    <button class="start-btn" onclick="startApp()">Let's Create! 🚀</button>
-    <p class="server-status">
-      <span class="status-dot" id="statusDot"></span>
-      <span id="statusText">Checking server...</span>
-    </p>
-  </div>
-</div>
-
-<!-- GALLERY -->
-<div class="screen" id="galleryScreen">
-  <div class="gallery-header">
-    <div class="gallery-header-left">
-      <span class="header-mascot">🎨</span>
-      <div>
-        <div class="header-title" id="galleryTitle">My Creations</div>
-        <div class="header-sub" id="gallerySubtitle">0 images created</div>
-      </div>
+<!-- ══════════════════ WELCOME SCREEN ══════════════════ -->
+<div id="welcomeScreen">
+  <div class="header">
+    <h1>🎨 Art with AI</h1>
+    <div class="header-right">
+      <button id="settingsBtn" class="settings-btn" title="Google API Settings" style="display:none" onclick="openSettings()">⚙️</button>
     </div>
-    <button class="new-btn" onclick="openChat()" title="Create new image">+</button>
   </div>
-  <div class="gallery-pagination" id="galleryPagination" style="display:none">
-    <button class="page-btn" id="prevBtn" onclick="changePage(-1)">← Prev</button>
-    <span class="page-info" id="pageInfo"></span>
-    <button class="page-btn" id="nextBtn" onclick="changePage(1)">Next →</button>
+  <div class="kid-select-screen">
+    <div style="font-size:4rem;margin-bottom:16px">🎨</div>
+    <h2>Welcome, young artist!</h2>
+    <p>Tell me your name and let's create amazing art together!</p>
+    <div class="kid-input-row">
+      <input id="kidNameInput" class="kid-input" type="text" placeholder="Your name..." maxlength="30"
+        onkeydown="if(event.key==='Enter') startChat()"/>
+      <button class="btn-start" onclick="startChat()">Let's Go! 🚀</button>
+    </div>
   </div>
-  <div class="gallery-body" id="galleryBody"></div>
 </div>
 
-<!-- CHAT -->
-<div class="screen" id="chatScreen">
+<!-- ══════════════════ CHAT SCREEN ══════════════════ -->
+<div id="chatScreen" class="chat-screen">
   <div class="chat-header">
-    <button class="back-btn" onclick="goBack()">← Back</button>
-    <span class="chat-title">✨ Create Magic</span>
-    <div class="chat-counter" id="chatCounter">0 / 10</div>
-  </div>
-  <div class="color-toggle-bar">
-    <div class="color-toggle-label">
-      🖍️ Coloring Page Mode
-      <span class="color-mode-hint" id="colorModeHint"></span>
+    <div>
+      <div class="kid-info">Creating art for</div>
+      <div class="kid-name" id="chatKidName"></div>
     </div>
-    <label class="toggle-switch">
-      <input type="checkbox" id="coloringToggle" onchange="onColoringToggle()"/>
-      <span class="toggle-slider"></span>
-    </label>
+    <div style="display:flex;gap:8px">
+      <button class="gallery-btn" onclick="showGallery()">🖼️ Gallery</button>
+      <button class="btn-back" onclick="backToWelcome()">← Back</button>
+    </div>
   </div>
   <div class="chat-body" id="chatBody"></div>
-  <div class="chat-footer">
-    <div class="chat-input-row">
-      <textarea class="chat-input" id="chatInput"
-        placeholder="What do you want to draw? Try: a flying elephant with rainbow wings 🐘"
-        rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-      <button class="send-btn" id="sendBtn" onclick="sendPrompt()">🎨</button>
-    </div>
-    <p class="hint-text" id="hintText">Press Enter or 🎨 to generate • Up to 10 prompts per image</p>
+  <div class="input-bar">
+    <input id="promptInput" class="prompt-input" type="text"
+      placeholder="Describe your drawing... 🌈" maxlength="200"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendPrompt()"/>
+    <button id="sendBtn" class="btn-send" onclick="sendPrompt()">➤</button>
   </div>
 </div>
 
+<!-- ══════════════════ GALLERY SCREEN ══════════════════ -->
+<div id="galleryScreen" class="gallery-screen">
+  <div class="gallery-header">
+    <button class="btn-back" onclick="hideGallery()">← Back</button>
+    <h2 id="galleryTitle">🖼️ Gallery</h2>
+  </div>
+  <div class="gallery-grid" id="galleryGrid"></div>
+  <div class="gallery-pagination">
+    <button class="btn-page" id="prevBtn" onclick="loadGallery(galleryPage-1)" disabled>← Prev</button>
+    <span id="pageInfo" style="align-self:center;font-size:0.85rem;color:#666"></span>
+    <button class="btn-page" id="nextBtn" onclick="loadGallery(galleryPage+1)" disabled>Next →</button>
+  </div>
+</div>
+
+<!-- ══════════════════ SETTINGS MODAL ══════════════════ -->
+<div id="settingsModal" class="modal-overlay">
+  <div class="modal">
+    <h2>⚙️ Google Image API Settings</h2>
+    <p class="modal-subtitle">Configure your personal Google API token for image generation.</p>
+
+    <div id="settingsStatusBadge"></div>
+
+    <div class="instructions">
+      <strong>How to get your free Google API token:</strong>
+      <ol>
+        <li>Go to <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a></li>
+        <li>Sign in with your Google account</li>
+        <li>Click <strong>"Create API key"</strong></li>
+        <li>Select a Google Cloud project (or create a new one)</li>
+        <li>Copy the generated key and paste it below</li>
+      </ol>
+      <div style="margin-top:10px;padding:8px;background:#fffbeb;border-radius:6px;border:1px solid #f6e05e;">
+        🆓 <strong>Free tier:</strong> Up to 500 images/day at no cost using <code>gemini-2.0-flash-exp</code>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Google API Token</label>
+      <input id="googleTokenInput" type="password" placeholder="AIza..."/>
+    </div>
+
+    <div class="form-group">
+      <label>Image Model</label>
+      <select id="googleModelInput">
+        <option value="gemini-2.0-flash-exp-image-generation">gemini-2.0-flash-exp-image-generation (Free ⭐)</option>
+        <option value="imagen-4.0-fast-generate-001">imagen-4.0-fast-generate-001 ($0.02/image)</option>
+        <option value="imagen-4.0-generate-001">imagen-4.0-generate-001 ($0.04/image)</option>
+        <option value="imagen-4.0-ultra-generate-001">imagen-4.0-ultra-generate-001 ($0.06/image)</option>
+        <option value="gemini-3.1-flash-image-preview">gemini-3.1-flash-image-preview ($0.067/image)</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-save" onclick="saveSettings()">💾 Save</button>
+      <button class="btn-clear" onclick="clearSettings()">🗑️ Clear</button>
+      <button class="btn-close" onclick="closeSettings()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ TOAST ══════════════════ -->
 <div class="toast" id="toast"></div>
 
 <script>
-// All API calls go to our own server — no keys in frontend
-const API = '';  // same origin
-
+// ── State ──────────────────────────────────────────────────
 let currentKid = '';
-let currentSession = null;
+let currentSession = { prompts: [], currentImage: null };
+let galleryPage = 0;
+let googleApiEnabled = false;
 
-// ── Init ──────────────────────────────────────────────────
-(async function init(){
-  // Health check
+// ── Boot ───────────────────────────────────────────────────
+(async () => {
   try {
-    const r = await fetch(`${API}/api/health`);
-    const data = await r.json();
-    if (data.ok) {
-      document.getElementById('statusDot').className = 'status-dot ok';
-      document.getElementById('statusText').textContent =
-        data.astra ? 'Server ready ✅ • Images saved to cloud' : 'Server ready ✅';
+    const r = await fetch('/api/config');
+    const cfg = await r.json();
+    googleApiEnabled = cfg.googleApiEnabled;
+    if (googleApiEnabled) {
+      document.getElementById('settingsBtn').style.display = 'flex';
+      updateSettingsBadge();
     }
-  } catch(e) {
-    document.getElementById('statusDot').className = 'status-dot err';
-    document.getElementById('statusText').textContent = 'Cannot reach server ❌';
-  }
+  } catch(e) { console.warn('Config fetch failed', e); }
 })();
 
-// ── Screens ───────────────────────────────────────────────
-function show(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+// ── Settings helpers ───────────────────────────────────────
+function getGoogleToken()  { return localStorage.getItem('google_api_token') || ''; }
+function getGoogleModel()  { return localStorage.getItem('google_image_model') || 'gemini-2.0-flash-exp-image-generation'; }
+function isGoogleConfigured() { return !!getGoogleToken(); }
+
+function updateSettingsBadge() {
+  const btn = document.getElementById('settingsBtn');
+  if (isGoogleConfigured()) btn.classList.add('configured');
+  else btn.classList.remove('configured');
 }
 
-// ── Login ─────────────────────────────────────────────────
-function startApp(){
-  const name = document.getElementById('nameInput').value.trim();
-  if (!name || name.length < 2) { toast('Please enter your full name 😊'); return; }
-  currentKid = name;
-  loadGallery();
-  show('galleryScreen');
-}
-document.getElementById('nameInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') startApp();
-});
+function openSettings() {
+  document.getElementById('googleTokenInput').value = getGoogleToken();
+  document.getElementById('googleModelInput').value = getGoogleModel();
 
-// ── Gallery (server-side paginated via Astra DB) ─────────
-// Simple page number — server uses skip = page * 10, limit = 10, sort timestamp desc
-let currentPage  = 0;
-let galleryTotal = 0;
-
-async function loadGallery(){
-  document.getElementById('galleryTitle').textContent = `${currentKid}'s Art`;
-  document.getElementById('gallerySubtitle').textContent = 'Loading...';
-  currentPage = 0;
-  await fetchGalleryPage();
-}
-
-async function changePage(dir){
-  currentPage = Math.max(0, currentPage + dir);
-  await fetchGalleryPage();
-  document.getElementById('galleryBody').scrollTop = 0;
-}
-
-async function fetchGalleryPage(){
-  const body       = document.getElementById('galleryBody');
-  const pagination = document.getElementById('galleryPagination');
-  body.innerHTML   = `<div style="text-align:center;padding:60px 20px;color:#aaa;font-weight:700">Loading... ✨</div>`;
-
-  try {
-    const res = await fetch(`${API}/api/gallery`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kid: currentKid, page: currentPage })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-
-    galleryTotal = data.total;
-    document.getElementById('gallerySubtitle').textContent =
-      `${galleryTotal} image${galleryTotal !== 1 ? 's' : ''} created`;
-
-    const totalPages = data.totalPages || 0;
-    pagination.style.display = totalPages > 1 ? 'flex' : 'none';
-    document.getElementById('pageInfo').textContent = `${currentPage + 1} / ${totalPages}`;
-    document.getElementById('prevBtn').disabled = currentPage === 0;
-    document.getElementById('nextBtn').disabled = currentPage >= totalPages - 1;
-
-    if (!data.items.length && currentPage === 0) {
-      body.innerHTML = `<div class="gallery-empty">
-        <span class="gallery-empty-icon">🌟</span>
-        <h2>Your canvas is empty!</h2>
-        <p>Press <strong>+</strong> to create your first magical picture</p>
-      </div>`;
-      return;
-    }
-
-    body.innerHTML = `<div class="gallery-grid">${
-      data.items.map((it, i) => `
-        <div class="gallery-item">
-          <img src="${it.url}" alt="AI art" loading="lazy"
-            onclick="window.open('${it.url}','_blank')" style="cursor:zoom-in"/>
-          <div class="gallery-item-info">
-            <div class="gallery-item-prompt">${escHtml(it.prompt)}</div>
-            <div class="gallery-item-count">✨ AI generated</div>
-            <div class="gallery-item-actions">
-              <button class="gallery-dl-btn view" onclick="window.open('${it.url}','_blank')">🔍 View</button>
-              <button class="gallery-dl-btn save" onclick="downloadGalleryImage('${it.url}', ${i})">💾 Save</button>
-            </div>
-          </div>
-        </div>`).join('')
-    }</div>`;
-
-  } catch(e) {
-    body.innerHTML = `<div class="gallery-empty">
-      <span class="gallery-empty-icon">😅</span>
-      <h2>Couldn't load images</h2>
-      <p>${escHtml(e.message)}</p>
-    </div>`;
+  const badge = document.getElementById('settingsStatusBadge');
+  if (isGoogleConfigured()) {
+    badge.innerHTML = '<span class="status-badge configured">✅ Google API configured</span>';
+  } else {
+    badge.innerHTML = '<span class="status-badge not-configured">⚠️ Not configured — using Flux model</span>';
   }
+
+  document.getElementById('settingsModal').classList.add('open');
 }
 
-// ── Chat ──────────────────────────────────────────────────
-function openChat(){
-  currentSession = { id: Date.now(), prompts:[], images:[], currentImage: null };
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function saveSettings() {
+  const token = document.getElementById('googleTokenInput').value.trim();
+  const model = document.getElementById('googleModelInput').value;
+  if (!token) { toast('Please enter your Google API token'); return; }
+  // Only store user-provided Google token in localStorage — Flux token stays server-side
+  localStorage.setItem('google_api_token', token);
+  localStorage.setItem('google_image_model', model);
+  updateSettingsBadge();
+  closeSettings();
+  toast('✅ Google API settings saved!');
+}
+
+function clearSettings() {
+  localStorage.removeItem('google_api_token');
+  localStorage.removeItem('google_image_model');
+  updateSettingsBadge();
+  closeSettings();
+  toast('Settings cleared — using Flux model');
+}
+
+// ── Kid flow ───────────────────────────────────────────────
+function startChat() {
+  const name = document.getElementById('kidNameInput').value.trim();
+  if (!name) { toast('Please enter your name!'); return; }
+  currentKid = name;
+  currentSession = { prompts: [], currentImage: null };
+  document.getElementById('welcomeScreen').style.display = 'none';
+  document.getElementById('chatScreen').style.display = 'flex';
+  document.getElementById('chatKidName').textContent = name;
   document.getElementById('chatBody').innerHTML = '';
-  document.getElementById('chatInput').value = '';
-  updateCounter();
-  addBotMsg(`Hi ${currentKid.split(' ')[0]}! 🎉 I'm your AI art buddy!<br>Tell me what you want to draw — the more fun the better!<br><em>Try: "a dragon eating ice cream" 🐉🍦</em>`);
-  show('chatScreen');
-  setTimeout(() => document.getElementById('chatInput').focus(), 300);
+  addBotMsg(`Hi <strong>${escHtml(name)}</strong>! 🌟 I'm your AI art buddy! Tell me what you'd like to draw today — maybe a <em>flying dragon</em> or a <em>magical castle</em>? ✨`);
 }
 
-function goBack(){ show('galleryScreen'); loadGallery(); }
-
-function updateCounter(){
-  const n = currentSession.prompts.length;
-  document.getElementById('chatCounter').textContent = `${n} / 10`;
-  const maxed = n >= 10;
-  document.getElementById('hintText').textContent = maxed
-    ? '🎉 Max prompts reached! Save your image or go back.'
-    : `Press Enter or 🎨 to generate • ${10-n} prompt${10-n!==1?'s':''} left`;
-  document.getElementById('sendBtn').disabled = maxed;
-  document.getElementById('chatInput').disabled = maxed;
+function backToWelcome() {
+  document.getElementById('chatScreen').style.display = 'none';
+  document.getElementById('welcomeScreen').style.display = 'block';
+  document.getElementById('kidNameInput').value = '';
 }
 
-function handleKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendPrompt();} }
-function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+// ── Send prompt ────────────────────────────────────────────
+async function sendPrompt() {
+  const input = document.getElementById('promptInput');
+  const prompt = input.value.trim();
+  if (!prompt) return;
+  if (currentSession.prompts.length >= 10) {
+    toast('You've created 10 amazing pictures! Start fresh 🎉'); return;
+  }
 
-const COLORING_SUFFIX = 'as a black and white coloring page, thick bold outlines, no color fill, white background, simple clean line art, printable';
-
-function onColoringToggle(){
-  const on = document.getElementById('coloringToggle').checked;
-  document.getElementById('colorModeHint').textContent = on ? '✅ ON' : '';
-  document.getElementById('chatInput').placeholder = on
-    ? 'Describe your picture — it will be a coloring page! 🖍️'
-    : 'What do you want to draw? Try: a flying elephant with rainbow wings 🐘';
-  toast(on ? '🖍️ Coloring page mode ON!' : '🎨 Color mode ON!');
-}
-
-async function sendPrompt(){
-  const input = document.getElementById('chatInput');
-  const rawPrompt = input.value.trim();
-  if (!rawPrompt) return;
-  if (currentSession.prompts.length >= 10) { toast('Max 10 prompts reached!'); return; }
-
-  const isColoring = document.getElementById('coloringToggle').checked;
-  // Actual prompt sent to AI — includes coloring suffix if toggle is on
-  const prompt = isColoring ? `${rawPrompt}, ${COLORING_SUFFIX}` : rawPrompt;
-
-  input.value=''; input.style.height='auto';
+  input.value = '';
+  input.disabled = true;
   document.getElementById('sendBtn').disabled = true;
 
-  addUserMsg(rawPrompt); // show kid's original text in chat, not the suffix
-  currentSession.prompts.push(rawPrompt);
-  updateCounter();
+  addUserMsg(prompt);
+  const typingEl = addTyping();
 
-  const typing = addTyping();
   try {
-    const res = await fetch(`${API}/api/generate`, {
+    const body = {
+      prompt,
+      allPrompts: currentSession.prompts,
+      inputImage: currentSession.currentImage,
+      kidName: currentKid
+    };
+
+    // Attach Google credentials from localStorage if enabled and configured
+    if (googleApiEnabled && isGoogleConfigured()) {
+      body.googleToken = getGoogleToken();
+      body.googleModel = getGoogleModel();
+    }
+
+    const res = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt,          // enriched prompt with coloring suffix
-        allPrompts: currentSession.prompts.slice(0, -1),
-        inputImage: currentSession.currentImage,
-        kidName: currentKid
-      })
+      body: JSON.stringify(body)
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Server error');
+    typingEl.remove();
 
-    typing.remove();
-    currentSession.currentImage = data.imageUrl;
-    currentSession.images.push(data.imageUrl);
-    // Pass the image URL and its prompt index so Save button saves the right image
-    const promptIdx = currentSession.prompts.length - 1;
-    addBotImage(data.imageUrl, promptIdx);
-  } catch(err) {
-    typing.remove();
-    addBotMsg(`Oops! Something went wrong 😅<br><small>${err.message}</small>`);
-    currentSession.prompts.pop();
-    updateCounter();
-  }
-  if (currentSession.prompts.length < 10)
-    document.getElementById('sendBtn').disabled = false;
-}
+    if (data.error) { addBotMsg(`😞 Oops! ${escHtml(data.error)}`); return; }
 
-// ── Storage: handled server-side via Astra DB ────────────
-
-async function saveCurrentImage(url, promptIdx){
-  // url and promptIdx are passed from the specific Save button clicked
-  // falls back to last image if called without args
-  url = url || currentSession.currentImage;
-  const prompt = promptIdx !== undefined
-    ? (currentSession.prompts[promptIdx] || '')
-    : (currentSession.prompts[currentSession.prompts.length - 1] || '');
-
-  if (!url) { toast('No image yet!'); return; }
-  toast('Saving... ⏳');
-  try {
-    const res = await fetch(`${API}/api/save`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageUrl: url, kidName: currentKid, prompt })
-    });
-    const data = await res.json();
-    const finalUrl = data.savedUrl || url;
-    // Trigger download
-    const a = document.createElement('a');
-    a.href = finalUrl; a.download = `${currentKid.replace(/\s+/g,'_')}_art.webp`;
-    a.target='_blank'; a.click();
-    toast('Image saved! 🎉');
+    currentSession.prompts.push(prompt);
+    currentSession.currentImage = data.url;
+    addBotImage(data.url, currentSession.prompts.length - 1);
   } catch(e) {
-    toast('Save failed, try again');
+    typingEl.remove();
+    addBotMsg('😞 Something went wrong. Please try again!');
+  } finally {
+    input.disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
   }
 }
 
-// ── DOM helpers ───────────────────────────────────────────
-function addUserMsg(text){
+// ── Save image ─────────────────────────────────────────────
+async function saveImage(url, promptText, btnEl) {
+  if (!url) { toast('No image to save!'); return; }
+  btnEl.disabled = true;
+  btnEl.textContent = '⏳ Saving...';
+  try {
+    const res = await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageUrl: url, kidName: currentKid, prompt: promptText })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    btnEl.textContent = '✅ Saved!';
+    toast('Image saved to gallery! 🎉');
+  } catch(e) {
+    btnEl.disabled = false;
+    btnEl.textContent = '💾 Save Image';
+    toast('Save failed: ' + e.message);
+  }
+}
+
+// ── Download image ─────────────────────────────────────────
+function downloadImage(url) {
+  if (!url) return;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${currentKid.replace(/\s+/g,'_')}_art.png`;
+  a.target = '_blank';
+  a.click();
+  toast('Downloading... 🎉');
+}
+
+// ── Gallery ────────────────────────────────────────────────
+function showGallery() {
+  galleryPage = 0;
+  document.getElementById('chatScreen').style.display = 'none';
+  document.getElementById('galleryScreen').style.display = 'flex';
+  document.getElementById('galleryTitle').textContent = `🖼️ ${currentKid}'s Gallery`;
+  loadGallery(0);
+}
+
+function hideGallery() {
+  document.getElementById('galleryScreen').style.display = 'none';
+  document.getElementById('chatScreen').style.display = 'flex';
+}
+
+async function loadGallery(page) {
+  galleryPage = page;
+  const grid = document.getElementById('galleryGrid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#888">Loading... ✨</div>';
+  try {
+    const res = await fetch(`/api/gallery?kid=${encodeURIComponent(currentKid)}&page=${page}`);
+    const data = await res.json();
+    const images = data.images || [];
+    grid.innerHTML = '';
+    if (!images.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#888">No saved images yet! 🎨</div>';
+    } else {
+      images.forEach(img => {
+        const item = document.createElement('div');
+        item.className = 'gallery-item';
+        item.innerHTML = `
+          <img src="${img.url}" alt="${escHtml(img.prompt||'')}" loading="lazy"/>
+          <button class="gallery-dl-btn" onclick="dlGalleryImg('${img.url}','${escHtml(img.kidName||'art')}')">⬇️</button>
+          <div class="gallery-item-info">
+            <strong>${escHtml(img.kidName||'')}</strong>
+            <span>${escHtml((img.prompt||'').substring(0,40))}${(img.prompt||'').length>40?'…':''}</span>
+          </div>`;
+        grid.appendChild(item);
+      });
+    }
+    document.getElementById('prevBtn').disabled = page === 0;
+    document.getElementById('nextBtn').disabled = images.length < 12;
+    document.getElementById('pageInfo').textContent = `Page ${page + 1}`;
+  } catch(e) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#e53e3e">Failed to load gallery</div>';
+  }
+}
+
+function dlGalleryImg(url, name) {
+  const a = document.createElement('a');
+  a.href = url; a.download = `${name}_art.png`; a.target = '_blank'; a.click();
+  toast('Downloading... ⬇️');
+}
+
+// ── DOM helpers ────────────────────────────────────────────
+function addUserMsg(text) {
   const d = document.createElement('div');
-  d.className='msg user';
-  d.innerHTML=`<div class="msg-avatar">😊</div><div class="msg-bubble">${escHtml(text)}</div>`;
+  d.className = 'msg user';
+  d.innerHTML = `<div class="msg-avatar">😊</div><div class="msg-bubble">${escHtml(text)}</div>`;
   document.getElementById('chatBody').appendChild(d); scrollChat();
 }
-function addBotMsg(html){
+
+function addBotMsg(html) {
   const d = document.createElement('div');
-  d.className='msg bot';
-  d.innerHTML=`<div class="msg-avatar">🤖</div><div class="msg-bubble">${html}</div>`;
+  d.className = 'msg bot';
+  d.innerHTML = `<div class="msg-avatar">🤖</div><div class="msg-bubble">${html}</div>`;
   document.getElementById('chatBody').appendChild(d); scrollChat(); return d;
 }
-function addBotImage(url, promptIdx){
+
+function addBotImage(url, promptIndex) {
+  const promptText = currentSession.prompts[promptIndex] || '';
   const d = document.createElement('div');
-  d.className='msg bot';
-  // Encode url safely for inline onclick
-  const safeUrl = url.replace(/'/g, "\'");
-  d.innerHTML=`<div class="msg-avatar">🤖</div>
+  d.className = 'msg bot';
+  d.innerHTML = `
+    <div class="msg-avatar">🤖</div>
     <div class="msg-bubble">Here's your magical picture! ✨<br>
-      <img class="msg-image" src="${url}" alt="AI art"/>
-      <br><button class="save-btn" onclick="saveCurrentImage('${safeUrl}', ${promptIdx})">💾 Save Image</button>
-      ${currentSession.prompts.length<10?'<br><small style="color:#999;display:block;margin-top:6px">Want to change something? Just tell me! 🎨</small>':''}
+      <img class="msg-image" src="${url}" alt="AI art" onclick="downloadImage('${url}')"/>
+      <br>
+      <button class="save-btn" onclick="saveImage('${url}','${escHtml(promptText)}',this)">💾 Save Image</button>
+      ${currentSession.prompts.length < 10
+        ? '<br><small style="color:#999;display:block;margin-top:6px">Want to change something? Just tell me! 🎨</small>'
+        : ''}
     </div>`;
   document.getElementById('chatBody').appendChild(d); scrollChat();
 }
-function addTyping(){
+
+function addTyping() {
   const d = document.createElement('div');
-  d.className='msg bot';
-  d.innerHTML=`<div class="msg-avatar">🤖</div>
+  d.className = 'msg bot';
+  d.innerHTML = `<div class="msg-avatar">🤖</div>
     <div class="msg-bubble">
       <div class="typing"><span></span><span></span><span></span></div>
       <small style="color:#aaa">Creating your picture... ✨</small>
     </div>`;
   document.getElementById('chatBody').appendChild(d); scrollChat(); return d;
 }
-function scrollChat(){
+
+function scrollChat() {
   const b = document.getElementById('chatBody');
-  requestAnimationFrame(()=>{ b.scrollTop = b.scrollHeight; });
-}
-async function downloadGalleryImage(url, idx) {
-  try {
-    // Fetch the image and trigger a real download (works cross-origin)
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = `${currentKid.replace(/\s+/g,'_')}_art_${idx+1}.webp`;
-    a.click();
-    URL.revokeObjectURL(blobUrl);
-    toast('Image downloaded! 🎉');
-  } catch(e) {
-    // Fallback: open in new tab if fetch fails (e.g. CORS)
-    window.open(url, '_blank');
-    toast('Opened in new tab — long press to save 📱');
-  }
+  requestAnimationFrame(() => { b.scrollTop = b.scrollHeight; });
 }
 
-function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function toast(msg){
-  const t = document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2800);
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// Close modal on overlay click
+document.getElementById('settingsModal').addEventListener('click', function(e) {
+  if (e.target === this) closeSettings();
+});
 </script>
 </body>
 </html>
