@@ -406,7 +406,7 @@ async function sendPrompt() {
   const prompt = input.value.trim();
   if (!prompt) return;
   if (currentSession.prompts.length >= 10) {
-    toast('You've created 10 amazing pictures! Start fresh 🎉'); return;
+    toast("You've created 10 amazing pictures! Start fresh 🎉"); return;
   }
 
   input.value = '';
