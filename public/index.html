@@ -27,6 +27,7 @@
   }
   .settings-btn:hover { background: rgba(255,255,255,0.35); }
   .settings-btn.configured { background: rgba(72,199,142,0.4); }
+  .settings-btn.hidden { display: none !important; }
 
   /* ── Settings modal ── */
   .modal-overlay {
@@ -212,7 +213,7 @@
   <div class="header">
     <h1>🎨 Art with AI</h1>
     <div class="header-right">
-      <button id="settingsBtn" class="settings-btn" title="Google API Settings" style="display:none" onclick="openSettings()">⚙️</button>
+      <button id="settingsBtn" class="settings-btn hidden" title="Google API Settings" onclick="openSettings()">⚙️</button>
     </div>
   </div>
   <div class="kid-select-screen">
@@ -325,7 +326,7 @@ let googleApiEnabled = false;
     const cfg = await r.json();
     googleApiEnabled = cfg.googleApiEnabled;
     if (googleApiEnabled) {
-      document.getElementById('settingsBtn').style.display = 'flex';
+      document.getElementById('settingsBtn').classList.remove('hidden');
       updateSettingsBadge();
     }
   } catch(e) { console.warn('Config fetch failed', e); }
