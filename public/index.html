@@ -159,6 +159,8 @@
   .print-btn:hover { background: #5a67d8; }
   .download-btn { background: #ed8936; }
   .download-btn:hover { background: #dd7324; }
+  .story-btn { background: #d53f8c; }
+  .story-btn:hover { background: #b83280; }
   .image-wrap { position: relative; display: inline-block; }
   .save-icon-btn {
     position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.45);
@@ -228,6 +230,42 @@
     padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
   }
   .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Story Builder ── */
+  .story-screen { display: none; flex-direction: column; height: 100vh; }
+  .story-screen.visible { display: flex !important; }
+  .story-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .story-header h2 { flex: 1; font-size: 1.1rem; }
+  .story-body {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 14px; background: #f0f4ff;
+  }
+  .story-intro-section { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+  .story-base-img { width: 110px; height: 110px; object-fit: cover; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0; }
+  .story-field { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
+  .story-field label { font-size: 0.85rem; font-weight: 600; color: #555; }
+  .story-field textarea, .story-field input {
+    padding: 10px 12px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.9rem;
+    outline: none; resize: vertical; font-family: inherit;
+  }
+  .story-field textarea:focus, .story-field input:focus { border-color: #667eea; }
+  .btn-generate-comic {
+    background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none;
+    padding: 12px; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer;
+  }
+  .btn-generate-comic:disabled { opacity: 0.6; cursor: not-allowed; }
+  .comic-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px;
+  }
+  .comic-panel { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .comic-panel-img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+  .comic-panel-error { padding: 30px 10px; text-align: center; color: #e53e3e; font-size: 0.85rem; }
+  .comic-caption { padding: 8px; font-size: 0.8rem; color: #555; }
+  .comic-actions { display: flex; gap: 10px; }
 
   /* ── Toast ── */
   .toast {
@@ -301,6 +339,52 @@
     <button class="btn-page" id="prevBtn" onclick="loadGallery(galleryPage-1)" disabled>← Prev</button>
     <span id="pageInfo" style="align-self:center;font-size:0.85rem;color:#666"></span>
     <button class="btn-page" id="nextBtn" onclick="loadGallery(galleryPage+1)" disabled>Next →</button>
+  </div>
+</div>
+
+<!-- ══════════════════ STORY BUILDER SCREEN ══════════════════ -->
+<div id="storyScreen" class="story-screen">
+  <div class="story-header">
+    <button class="btn-back" onclick="hideStoryBuilder()">← Back</button>
+    <h2>📖 Comic Story Builder</h2>
+  </div>
+  <div class="story-body">
+    <div class="story-intro-section">
+      <img id="storyBaseImage" class="story-base-img" alt="Your picture"/>
+      <div class="story-field">
+        <label>1️⃣ Introduction — what's happening in this picture?</label>
+        <textarea id="storyIntro" rows="2" maxlength="200" placeholder="Tell us about your picture..."></textarea>
+      </div>
+    </div>
+
+    <div class="story-field">
+      <label>2️⃣ What happens next? (Part 1)</label>
+      <input class="story-step" type="text" maxlength="150" placeholder="Describe what happens next..."/>
+    </div>
+    <div class="story-field">
+      <label>3️⃣ Then what happens? (Part 2)</label>
+      <input class="story-step" type="text" maxlength="150" placeholder="Describe what happens next..."/>
+    </div>
+    <div class="story-field">
+      <label>4️⃣ And then? (Part 3)</label>
+      <input class="story-step" type="text" maxlength="150" placeholder="Describe what happens next..."/>
+    </div>
+    <div class="story-field">
+      <label>5️⃣ What happens after that? (Part 4)</label>
+      <input class="story-step" type="text" maxlength="150" placeholder="Describe what happens next..."/>
+    </div>
+    <div class="story-field">
+      <label>6️⃣ How does the story end? (Part 5)</label>
+      <input class="story-step" type="text" maxlength="150" placeholder="Describe how the story ends..."/>
+    </div>
+
+    <button class="btn-generate-comic" id="generateComicBtn" onclick="generateComic()">✨ Generate Comic Book!</button>
+
+    <div class="comic-grid" id="comicResult"></div>
+
+    <div class="comic-actions">
+      <button class="print-btn" onclick="printComic()">🖨️ Print Comic Book</button>
+    </div>
   </div>
 </div>
 
@@ -590,6 +674,103 @@ function printImage(url) {
   win.document.close();
 }
 
+// ── Story Builder (Comic) ───────────────────────────────────
+let storyState = { baseImage: null };
+
+function openStoryBuilder(url, promptText) {
+  storyState.baseImage = url;
+  document.getElementById('storyBaseImage').src = url;
+  document.getElementById('storyIntro').value = promptText || '';
+  document.querySelectorAll('.story-step').forEach(el => el.value = '');
+  document.getElementById('comicResult').innerHTML = '';
+  document.getElementById('chatScreen').classList.remove('visible');
+  document.getElementById('storyScreen').classList.add('visible');
+}
+
+function hideStoryBuilder() {
+  document.getElementById('storyScreen').classList.remove('visible');
+  document.getElementById('chatScreen').classList.add('visible');
+}
+
+async function generateComic() {
+  const intro = document.getElementById('storyIntro').value.trim();
+  const steps = Array.from(document.querySelectorAll('.story-step')).map(el => el.value.trim());
+
+  if (!intro) { toast('Please describe what is happening in the picture!'); return; }
+  if (steps.some(s => !s)) { toast('Please fill in all 5 story parts!'); return; }
+
+  const btn = document.getElementById('generateComicBtn');
+  const result = document.getElementById('comicResult');
+  btn.disabled = true;
+  result.innerHTML = '';
+
+  // Panel 1: the original picture with the introduction
+  addComicPanel(result, storyState.baseImage, `Part 1: ${intro}`);
+
+  for (let i = 0; i < steps.length; i++) {
+    btn.textContent = `✨ Creating part ${i + 2} of 6...`;
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `${intro}. Next, ${steps[i]}. Keep the same characters and art style, comic book panel for kids, ${COLORING_SUFFIX}`,
+          allPrompts: [],
+          inputImage: storyState.baseImage,
+          kidName: currentKid
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      addComicPanel(result, data.url, `Part ${i + 2}: ${steps[i]}`);
+    } catch (e) {
+      addComicPanel(result, null, `Part ${i + 2}: ${steps[i]}`, true);
+      toast(`Oops, part ${i + 2} failed: ${e.message}`);
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '✨ Generate Comic Book!';
+  toast('Your comic book is ready! 📖🎉');
+}
+
+function addComicPanel(container, url, caption, failed) {
+  const panel = document.createElement('div');
+  panel.className = 'comic-panel';
+  panel.innerHTML = failed
+    ? `<div class="comic-panel-error">😞 Couldn't create this part</div><div class="comic-caption">${escHtml(caption)}</div>`
+    : `<img src="${url}" class="comic-panel-img" alt="Comic panel"/><div class="comic-caption">${escHtml(caption)}</div>`;
+  container.appendChild(panel);
+}
+
+function printComic() {
+  const panels = document.querySelectorAll('#comicResult .comic-panel');
+  if (!panels.length) { toast('Generate your comic first!'); return; }
+
+  let html = `
+    <html>
+      <head>
+        <title>My Comic Book</title>
+        <style>
+          body { font-family: sans-serif; margin: 20px; }
+          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+          .comic-panel { border: 3px solid #333; border-radius: 10px; padding: 8px; text-align: center; page-break-inside: avoid; }
+          .comic-panel-img { max-width: 100%; border-radius: 6px; }
+          .comic-caption { margin-top: 6px; font-size: 0.9rem; }
+          .comic-panel-error { padding: 30px 10px; color: #e53e3e; }
+        </style>
+      </head>
+      <body>
+        <div class="grid">${Array.from(panels).map(p => p.outerHTML).join('')}</div>
+      </body>
+    </html>
+  `;
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.onload = () => win.print();
+}
+
 // ── Gallery ────────────────────────────────────────────────
 function showGallery() {
   galleryPage = 0;
@@ -682,6 +863,7 @@ function addBotImage(url, promptIndex) {
       <br>
       <button class="print-btn">🖨️ Print</button>
       <button class="download-btn">⬇️ Download</button>
+      <button class="story-btn">📖 Make a Comic</button>
       ${currentSession.prompts.length < 10
         ? '<br><small style="color:#999;display:block;margin-top:6px">Want to change something? Just tell me! 🎨</small>'
         : ''}
@@ -695,6 +877,8 @@ function addBotImage(url, promptIndex) {
   printBtn.onclick = () => printImage(url);
   const downloadBtn = d.querySelector('.download-btn');
   downloadBtn.onclick = () => downloadImage(url);
+  const storyBtn = d.querySelector('.story-btn');
+  storyBtn.onclick = () => openStoryBuilder(url, promptText);
   document.getElementById('chatBody').appendChild(d);
   scrollChat();
 }
