@@ -253,6 +253,10 @@
     outline: none; resize: vertical; font-family: inherit;
   }
   .story-field textarea:focus, .story-field input:focus { border-color: #667eea; }
+  .story-checkbox-label {
+    display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 500; color: #666;
+  }
+  .story-checkbox-label input { width: auto; }
   .btn-generate-comic {
     background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none;
     padding: 12px; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer;
@@ -360,22 +364,42 @@
     <div class="story-field">
       <label>2️⃣ What happens next? (Part 1)</label>
       <input class="story-step" type="text" maxlength="150" placeholder="Describe what happens next..."/>
+      <input class="story-image-prompt" type="text" maxlength="200" placeholder="Optional: custom image prompt for this part..."/>
+      <label class="story-checkbox-label">
+        <input type="checkbox" class="story-use-base" checked/> Use base image for this part
+      </label>
     </div>
     <div class="story-field">
       <label>3️⃣ Then what happens? (Part 2)</label>
       <input class="story-step" type="text" maxlength="150" placeholder="Describe what happens next..."/>
+      <input class="story-image-prompt" type="text" maxlength="200" placeholder="Optional: custom image prompt for this part..."/>
+      <label class="story-checkbox-label">
+        <input type="checkbox" class="story-use-base" checked/> Use base image for this part
+      </label>
     </div>
     <div class="story-field">
       <label>4️⃣ And then? (Part 3)</label>
       <input class="story-step" type="text" maxlength="150" placeholder="Describe what happens next..."/>
+      <input class="story-image-prompt" type="text" maxlength="200" placeholder="Optional: custom image prompt for this part..."/>
+      <label class="story-checkbox-label">
+        <input type="checkbox" class="story-use-base" checked/> Use base image for this part
+      </label>
     </div>
     <div class="story-field">
       <label>5️⃣ What happens after that? (Part 4)</label>
       <input class="story-step" type="text" maxlength="150" placeholder="Describe what happens next..."/>
+      <input class="story-image-prompt" type="text" maxlength="200" placeholder="Optional: custom image prompt for this part..."/>
+      <label class="story-checkbox-label">
+        <input type="checkbox" class="story-use-base" checked/> Use base image for this part
+      </label>
     </div>
     <div class="story-field">
       <label>6️⃣ How does the story end? (Part 5)</label>
       <input class="story-step" type="text" maxlength="150" placeholder="Describe how the story ends..."/>
+      <input class="story-image-prompt" type="text" maxlength="200" placeholder="Optional: custom image prompt for this part..."/>
+      <label class="story-checkbox-label">
+        <input type="checkbox" class="story-use-base" checked/> Use base image for this part
+      </label>
     </div>
 
     <button class="btn-generate-comic" id="generateComicBtn" onclick="generateComic()">✨ Generate Comic Book!</button>
@@ -685,6 +709,8 @@ function openStoryBuilder(url, promptText) {
   document.getElementById('storyBaseImage').src = url;
   document.getElementById('storyIntro').value = promptText || '';
   document.querySelectorAll('.story-step').forEach(el => el.value = '');
+  document.querySelectorAll('.story-image-prompt').forEach(el => el.value = '');
+  document.querySelectorAll('.story-use-base').forEach(el => el.checked = true);
   document.getElementById('comicResult').innerHTML = '';
   document.getElementById('chatScreen').classList.remove('visible');
   document.getElementById('storyScreen').classList.add('visible');
@@ -698,6 +724,8 @@ function hideStoryBuilder() {
 async function generateComic() {
   const intro = document.getElementById('storyIntro').value.trim();
   const steps = Array.from(document.querySelectorAll('.story-step')).map(el => el.value.trim());
+  const imagePrompts = Array.from(document.querySelectorAll('.story-image-prompt')).map(el => el.value.trim());
+  const useBaseImage = Array.from(document.querySelectorAll('.story-use-base')).map(el => el.checked);
 
   if (!intro) { toast('Please describe what is happening in the picture!'); return; }
   if (steps.some(s => !s)) { toast('Please fill in all 5 story parts!'); return; }
@@ -722,13 +750,18 @@ async function generateComic() {
   for (let i = 0; i < steps.length; i++) {
     btn.textContent = `✨ Creating part ${i + 2} of 6...`;
     try {
+      const customPrompt = imagePrompts[i];
+      const prompt = customPrompt
+        ? `${customPrompt}, comic book panel for kids, ${COLORING_SUFFIX}`
+        : `${intro}. Next, ${steps[i]}. Keep the same characters and art style, comic book panel for kids, ${COLORING_SUFFIX}`;
+
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: `${intro}. Next, ${steps[i]}. Keep the same characters and art style, comic book panel for kids, ${COLORING_SUFFIX}`,
+          prompt,
           allPrompts: [],
-          inputImage: storyState.baseImage,
+          inputImage: useBaseImage[i] ? storyState.baseImage : null,
           kidName: currentKid
         })
       });
