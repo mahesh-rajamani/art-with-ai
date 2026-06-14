@@ -164,7 +164,7 @@ async function generateWithReplicate(prompt, allPrompts, inputImage) {
     let imageData = inputImage;
     if (!inputImage.startsWith('data:')) {
       const imgRes = await fetch(inputImage);
-      const buffer = await imgRes.buffer();
+      const buffer = Buffer.from(await imgRes.arrayBuffer());
       imageData = `data:image/webp;base64,${buffer.toString('base64')}`;
     }
     predictionBody = {
