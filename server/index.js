@@ -62,7 +62,7 @@ app.get('/api/config', (req, res) => {
 
 // ── Concurrency limiter ───────────────────────────────────
 let activeJobs = 0;
-const MAX_JOBS = 3;
+const MAX_JOBS = 10;
 
 // ── Generate image ────────────────────────────────────────
 app.post('/api/generate', async (req, res) => {

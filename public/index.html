@@ -514,6 +514,7 @@ function startChat() {
   if (!name) { toast('Please enter your name!'); return; }
   currentKid = name;
   currentSession = { prompts: [], currentImage: null };
+  comicCount = 0;
   document.getElementById('welcomeScreen').style.display = 'none';
   document.getElementById('chatScreen').classList.add('visible');
   document.getElementById('chatKidName').textContent = name;
@@ -676,6 +677,8 @@ function printImage(url) {
 
 // ── Story Builder (Comic) ───────────────────────────────────
 let storyState = { baseImage: null };
+let comicCount = 0;
+const MAX_COMICS_PER_KID = 3;
 
 function openStoryBuilder(url, promptText) {
   storyState.baseImage = url;
@@ -701,6 +704,15 @@ async function generateComic() {
 
   const btn = document.getElementById('generateComicBtn');
   const result = document.getElementById('comicResult');
+
+  if (comicCount >= MAX_COMICS_PER_KID) {
+    btn.disabled = true;
+    btn.textContent = "🎉 You've made all your comic books for today!";
+    toast("You've reached the limit of 3 comic books — see you next time! 🎉");
+    return;
+  }
+  comicCount++;
+
   btn.disabled = true;
   result.innerHTML = '';
 
@@ -731,9 +743,33 @@ async function generateComic() {
     await new Promise(r => setTimeout(r, 1500));
   }
 
-  btn.disabled = false;
-  btn.textContent = '✨ Generate Comic Book!';
   toast('Your comic book is ready! 📖🎉');
+  startComicCooldown(btn, 5 * 60);
+}
+
+// ── Cooldown: limit comic generation to once every 5 minutes ──
+function startComicCooldown(btn, seconds) {
+  let remaining = seconds;
+  btn.disabled = true;
+  const tick = () => {
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    btn.textContent = `⏳ Try again in ${m}:${s.toString().padStart(2, '0')}`;
+    if (remaining <= 0) {
+      clearInterval(timer);
+      if (comicCount >= MAX_COMICS_PER_KID) {
+        btn.disabled = true;
+        btn.textContent = "🎉 You've made all your comic books for today!";
+        return;
+      }
+      btn.disabled = false;
+      btn.textContent = '✨ Generate Comic Book!';
+      return;
+    }
+    remaining--;
+  };
+  tick();
+  const timer = setInterval(tick, 1000);
 }
 
 function addComicPanel(container, url, caption, failed) {
