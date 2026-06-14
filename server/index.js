@@ -188,7 +188,9 @@ async function generateWithReplicate(prompt, allPrompts, inputImage) {
     body: JSON.stringify(predictionBody)
   });
   const prediction = await createRes.json();
-  if (prediction.error) throw new Error(prediction.error);
+  if (!prediction.urls || !prediction.urls.get) {
+    throw new Error(prediction.error || prediction.detail || prediction.title || 'Replicate request failed');
+  }
 
   return await pollPrediction(prediction.urls.get, 0);
 }

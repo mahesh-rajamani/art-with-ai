@@ -727,6 +727,8 @@ async function generateComic() {
       addComicPanel(result, null, `Part ${i + 2}: ${steps[i]}`, true);
       toast(`Oops, part ${i + 2} failed: ${e.message}`);
     }
+    // Brief pause so Replicate's concurrency limit frees up before the next request
+    await new Promise(r => setTimeout(r, 1500));
   }
 
   btn.disabled = false;
