@@ -151,16 +151,22 @@
   }
   .msg.user .msg-bubble { background: #667eea; color: white; }
   .msg-image { max-width: 260px; border-radius: 10px; display: block; margin-top: 8px; cursor: pointer; }
-  .save-btn, .print-btn, .download-btn {
+  .print-btn, .download-btn {
     margin-top: 10px; margin-right: 6px; background: #48bb78; color: white; border: none;
     padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
   }
-  .save-btn:hover { background: #38a169; }
-  .save-btn:disabled { background: #a0aec0; cursor: not-allowed; }
   .print-btn { background: #667eea; }
   .print-btn:hover { background: #5a67d8; }
   .download-btn { background: #ed8936; }
   .download-btn:hover { background: #dd7324; }
+  .image-wrap { position: relative; display: inline-block; }
+  .save-icon-btn {
+    position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.45);
+    color: white; border: none; border-radius: 6px; padding: 4px 6px;
+    font-size: 0.75rem; cursor: pointer; line-height: 1;
+  }
+  .save-icon-btn:hover { background: rgba(0,0,0,0.65); }
+  .save-icon-btn:disabled { background: rgba(160,174,192,0.7); cursor: not-allowed; }
 
   .typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
   .typing span {
@@ -268,17 +274,17 @@
   <div class="color-toggle-bar">
     <div class="color-toggle-label">
       🖍️ Coloring Page Mode
-      <span class="color-mode-hint" id="colorModeHint"></span>
+      <span class="color-mode-hint" id="colorModeHint">✅ ON</span>
     </div>
     <label class="toggle-switch">
-      <input type="checkbox" id="coloringToggle" onchange="onColoringToggle()"/>
+      <input type="checkbox" id="coloringToggle" checked onchange="onColoringToggle()"/>
       <span class="toggle-slider"></span>
     </label>
   </div>
   <div class="chat-body" id="chatBody"></div>
   <div class="input-bar">
     <input id="promptInput" class="prompt-input" type="text"
-      placeholder="Describe your drawing... 🌈" maxlength="200"
+      placeholder="Describe your coloring page... 🖍️" maxlength="200"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendPrompt()"/>
     <button id="sendBtn" class="btn-send" onclick="sendPrompt()">➤</button>
   </div>
@@ -509,7 +515,7 @@ async function sendPrompt() {
 async function saveImage(url, promptText, btnEl) {
   if (!url) { toast('No image to save!'); return; }
   btnEl.disabled = true;
-  btnEl.textContent = '⏳ Saving...';
+  btnEl.textContent = '⏳';
   try {
     const res = await fetch('/api/save', {
       method: 'POST',
@@ -518,11 +524,11 @@ async function saveImage(url, promptText, btnEl) {
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    btnEl.textContent = '✅ Saved!';
+    btnEl.textContent = '✅';
     toast('Image saved to gallery! 🎉');
   } catch(e) {
     btnEl.disabled = false;
-    btnEl.textContent = '💾 Save Image';
+    btnEl.textContent = '💾';
     toast('Save failed: ' + e.message);
   }
 }
@@ -530,12 +536,43 @@ async function saveImage(url, promptText, btnEl) {
 // ── Download image ─────────────────────────────────────────
 function downloadImage(url) {
   if (!url) return;
+  const filename = `${currentKid.replace(/\s+/g,'_')}_art.png`;
+
+  // Try to convert to PNG via canvas so downloads aren't .webp
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        if (!blob) return downloadRaw(url, filename);
+        const blobUrl = URL.createObjectURL(blob);
+        triggerDownload(blobUrl, filename);
+        URL.revokeObjectURL(blobUrl);
+        toast('Downloading... 🎉');
+      }, 'image/png');
+    } catch (e) {
+      downloadRaw(url, filename);
+    }
+  };
+  img.onerror = () => downloadRaw(url, filename);
+  img.src = url;
+}
+
+function downloadRaw(url, filename) {
+  triggerDownload(url, filename);
+  toast('Downloading... 🎉');
+}
+
+function triggerDownload(href, filename) {
   const a = document.createElement('a');
-  a.href = url;
-  a.download = `${currentKid.replace(/\s+/g,'_')}_art.png`;
+  a.href = href;
+  a.download = filename;
   a.target = '_blank';
   a.click();
-  toast('Downloading... 🎉');
 }
 
 // ── Print image ───────────────────────────────────────────
@@ -638,9 +675,11 @@ function addBotImage(url, promptIndex) {
   d.innerHTML = `
     <div class="msg-avatar">🤖</div>
     <div class="msg-bubble">Here's your magical picture! ✨<br>
-      <img class="msg-image" src="${url}" alt="AI art"/>
+      <div class="image-wrap">
+        <img class="msg-image" src="${url}" alt="AI art"/>
+        <button class="save-icon-btn" title="Save Image">💾</button>
+      </div>
       <br>
-      <button class="save-btn">💾 Save Image</button>
       <button class="print-btn">🖨️ Print</button>
       <button class="download-btn">⬇️ Download</button>
       ${currentSession.prompts.length < 10
@@ -650,7 +689,7 @@ function addBotImage(url, promptIndex) {
   // Attach events safely — no inline URL in onclick
   const img = d.querySelector('.msg-image');
   img.onclick = () => downloadImage(url);
-  const saveBtn = d.querySelector('.save-btn');
+  const saveBtn = d.querySelector('.save-icon-btn');
   saveBtn.onclick = () => saveImage(url, promptText, saveBtn);
   const printBtn = d.querySelector('.print-btn');
   printBtn.onclick = () => printImage(url);
