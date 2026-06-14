@@ -151,12 +151,16 @@
   }
   .msg.user .msg-bubble { background: #667eea; color: white; }
   .msg-image { max-width: 260px; border-radius: 10px; display: block; margin-top: 8px; cursor: pointer; }
-  .save-btn {
-    margin-top: 10px; background: #48bb78; color: white; border: none;
+  .save-btn, .print-btn, .download-btn {
+    margin-top: 10px; margin-right: 6px; background: #48bb78; color: white; border: none;
     padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
   }
   .save-btn:hover { background: #38a169; }
   .save-btn:disabled { background: #a0aec0; cursor: not-allowed; }
+  .print-btn { background: #667eea; }
+  .print-btn:hover { background: #5a67d8; }
+  .download-btn { background: #ed8936; }
+  .download-btn:hover { background: #dd7324; }
 
   .typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
   .typing span {
@@ -534,6 +538,21 @@ function downloadImage(url) {
   toast('Downloading... 🎉');
 }
 
+// ── Print image ───────────────────────────────────────────
+function printImage(url) {
+  if (!url) return;
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <html>
+      <head><title>Print Artwork</title></head>
+      <body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh">
+        <img src="${url}" style="max-width:100%;max-height:100vh" onload="window.print()"/>
+      </body>
+    </html>
+  `);
+  win.document.close();
+}
+
 // ── Gallery ────────────────────────────────────────────────
 function showGallery() {
   galleryPage = 0;
@@ -622,6 +641,8 @@ function addBotImage(url, promptIndex) {
       <img class="msg-image" src="${url}" alt="AI art"/>
       <br>
       <button class="save-btn">💾 Save Image</button>
+      <button class="print-btn">🖨️ Print</button>
+      <button class="download-btn">⬇️ Download</button>
       ${currentSession.prompts.length < 10
         ? '<br><small style="color:#999;display:block;margin-top:6px">Want to change something? Just tell me! 🎨</small>'
         : ''}
@@ -631,6 +652,10 @@ function addBotImage(url, promptIndex) {
   img.onclick = () => downloadImage(url);
   const saveBtn = d.querySelector('.save-btn');
   saveBtn.onclick = () => saveImage(url, promptText, saveBtn);
+  const printBtn = d.querySelector('.print-btn');
+  printBtn.onclick = () => printImage(url);
+  const downloadBtn = d.querySelector('.download-btn');
+  downloadBtn.onclick = () => downloadImage(url);
   document.getElementById('chatBody').appendChild(d);
   scrollChat();
 }
