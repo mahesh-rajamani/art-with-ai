@@ -157,35 +157,26 @@ async function generateWithReplicate(prompt, allPrompts, inputImage) {
     ? [...(allPrompts || []), prompt].join(', ')
     : prompt;
 
-  let predictionBody;
+  let replicateUrl;
+  let replicateBody;
 
   if (inputImage) {
-    // Flux Kontext Dev for refinements
-    let imageData = inputImage;
-    if (!inputImage.startsWith('data:')) {
-      const imgRes = await fetch(inputImage);
-      const buffer = Buffer.from(await imgRes.arrayBuffer());
-      imageData = `data:image/webp;base64,${buffer.toString('base64')}`;
-    }
-    predictionBody = {
-      version: 'black-forest-labs/flux-kontext-dev',
-      input: { prompt: fullPrompt, input_image: imageData }
-    };
+    // Flux Kontext Dev for refinements — pass image URL directly, Replicate can access its own CDN
+    replicateUrl = 'https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-dev/predictions';
+    replicateBody = { input: { prompt: fullPrompt, input_image: inputImage } };
   } else {
-    // Flux Schnell for initial generation
-    predictionBody = {
-      version: 'black-forest-labs/flux-schnell',
-      input: { prompt: fullPrompt, num_outputs: 1 }
-    };
+    // Flux Schnell for initial generation — version field format works reliably for this model
+    replicateUrl = 'https://api.replicate.com/v1/predictions';
+    replicateBody = { version: 'black-forest-labs/flux-schnell', input: { prompt: fullPrompt, num_outputs: 1 } };
   }
 
-  const createRes = await fetch('https://api.replicate.com/v1/predictions', {
+  const createRes = await fetch(replicateUrl, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${REPLICATE_KEY}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(predictionBody)
+    body: JSON.stringify(replicateBody)
   });
   const prediction = await createRes.json();
   if (!prediction.urls || !prediction.urls.get) {
