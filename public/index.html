@@ -224,6 +224,10 @@
     color: white; border: none; border-radius: 6px; padding: 4px 8px;
     font-size: 0.75rem; cursor: pointer;
   }
+  .gallery-comic-badge {
+    position: absolute; top: 6px; left: 6px; background: rgba(213,63,140,0.85);
+    color: white; font-size: 0.65rem; padding: 3px 7px; border-radius: 6px; font-weight: 700;
+  }
   .gallery-pagination { display: flex; justify-content: center; gap: 10px; padding: 14px; }
   .btn-page {
     background: white; border: 1.5px solid #667eea; color: #667eea;
@@ -408,6 +412,8 @@
 
     <div class="comic-actions">
       <button class="print-btn" onclick="printComic()">🖨️ Print Comic Book</button>
+      <button class="download-btn" id="saveComicBtn" onclick="saveComicBook()">💾 Save Comic Book</button>
+      <button class="download-btn" id="downloadComicBtn" onclick="downloadComicBook()">⬇️ Download PDF</button>
     </div>
   </div>
 </div>
@@ -460,12 +466,15 @@
 <!-- ══════════════════ TOAST ══════════════════ -->
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 // ── State ──────────────────────────────────────────────────
 let currentKid = '';
 let currentSession = { prompts: [], currentImage: null };
 let galleryPage = 0;
 let googleApiEnabled = false;
+let cloudinaryName = null;
+let cloudinaryPreset = null;
 
 // ── Boot ───────────────────────────────────────────────────
 (async () => {
@@ -476,6 +485,8 @@ let googleApiEnabled = false;
     const r = await fetch('/api/config');
     const cfg = await r.json();
     googleApiEnabled = cfg.googleApiEnabled;
+    cloudinaryName = cfg.cloudinaryName;
+    cloudinaryPreset = cfg.cloudinaryPreset;
     if (googleApiEnabled) {
       document.getElementById('settingsBtn').classList.remove('hidden');
       updateSettingsBadge();
@@ -842,6 +853,144 @@ function printComic() {
   win.onload = () => win.print();
 }
 
+// ── Save comic book as PDF to gallery ──────────────────────
+async function saveComicBook() {
+  const panels = document.querySelectorAll('#comicResult .comic-panel');
+  if (!panels.length) { toast('Generate your comic first!'); return; }
+
+  if (!cloudinaryName || !cloudinaryPreset) {
+    toast('Comic saving is not configured on this server.');
+    return;
+  }
+
+  const btn = document.getElementById('saveComicBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Building PDF...';
+
+  try {
+    const pdfBlob = await buildComicPdf(panels);
+    btn.textContent = '⏳ Uploading...';
+
+    // Upload straight to Cloudinary from the browser — a multi-panel PDF can be
+    // several MB, far past what we want to route through our own server.
+    const form = new FormData();
+    form.append('file', pdfBlob, 'comic.pdf');
+    form.append('upload_preset', cloudinaryPreset);
+    form.append('tags', `iags,comic,${currentKid.replace(/\s+/g, '_')}`);
+    form.append('context', `kid=${currentKid}`);
+    const upRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryName}/image/upload`, {
+      method: 'POST', body: form
+    });
+    const upData = await upRes.json();
+    if (upData.error) throw new Error(upData.error.message);
+
+    const title = document.getElementById('storyIntro').value.trim();
+    const res = await fetch('/api/save-comic', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kidName: currentKid, url: upData.secure_url, title })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    btn.textContent = '✅ Saved!';
+    toast('Comic book saved to gallery! 📖🎉');
+    setTimeout(() => { btn.disabled = false; btn.textContent = '💾 Save Comic Book'; }, 2500);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '💾 Save Comic Book';
+    toast('Save failed: ' + e.message);
+  }
+}
+
+// ── Download comic book PDF straight to the device ─────────
+// No Cloudinary/Astra involved — works even if cloud saving is misconfigured.
+async function downloadComicBook() {
+  const panels = document.querySelectorAll('#comicResult .comic-panel');
+  if (!panels.length) { toast('Generate your comic first!'); return; }
+
+  const btn = document.getElementById('downloadComicBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Building PDF...';
+
+  try {
+    const pdfBlob = await buildComicPdf(panels);
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    triggerDownload(blobUrl, `${currentKid.replace(/\s+/g, '_')}_comic.pdf`);
+    URL.revokeObjectURL(blobUrl);
+    toast('Downloading your comic book... 📖⬇️');
+  } catch (e) {
+    toast('Download failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬇️ Download PDF';
+  }
+}
+
+async function buildComicPdf(panels) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 30, gap = 14, cols = 2;
+  const cellW = (pageW - margin * 2 - gap * (cols - 1)) / cols;
+  const imgH = cellW; // square panels
+  const captionH = 50;
+  const cellH = imgH + captionH;
+  const rowsPerPage = Math.max(1, Math.floor((pageH - margin * 2) / (cellH + gap)));
+
+  let col = 0, row = 0;
+  for (let i = 0; i < panels.length; i++) {
+    if (row >= rowsPerPage) { doc.addPage(); row = 0; col = 0; }
+    const x = margin + col * (cellW + gap);
+    const y = margin + row * (cellH + gap);
+
+    const imgEl = panels[i].querySelector('.comic-panel-img');
+    const captionEl = panels[i].querySelector('.comic-caption') || panels[i].querySelector('.comic-panel-error');
+    const caption = captionEl ? captionEl.textContent : '';
+
+    doc.setDrawColor(80);
+    doc.roundedRect(x, y, cellW, cellH, 4, 4);
+
+    if (imgEl) {
+      try {
+        const dataUrl = await imageToDataUrl(imgEl.src);
+        doc.addImage(dataUrl, 'JPEG', x + 4, y + 4, cellW - 8, imgH - 8);
+      } catch (e) { /* skip image that can't be loaded, keep the caption */ }
+    }
+
+    doc.setFontSize(11);
+    doc.text(caption, x + 6, y + imgH + 16, { maxWidth: cellW - 12 });
+
+    col++;
+    if (col >= cols) { col = 0; row++; }
+  }
+
+  return doc.output('blob');
+}
+
+function imageToDataUrl(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      // JPEG, not PNG — these are full-color AI art, not flat line-art, so JPEG
+      // compresses much smaller and keeps the upload fast.
+      try { resolve(canvas.toDataURL('image/jpeg', 0.85)); }
+      catch (e) { reject(e); }
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 // ── Gallery ────────────────────────────────────────────────
 function showGallery() {
   galleryPage = 0;
@@ -869,23 +1018,34 @@ async function loadGallery(page) {
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#888">No saved images yet! 🎨</div>';
     } else {
       images.forEach((img, i) => {
+        const isComic = img.type === 'comic';
         const item = document.createElement('div');
         item.className = 'gallery-item';
+
         const imgEl = document.createElement('img');
-        imgEl.src = img.url;
+        imgEl.src = isComic ? img.url.replace(/\.pdf(\?|$)/i, '.jpg$1') : img.url;
         imgEl.alt = img.prompt || '';
         imgEl.loading = 'lazy';
+        if (isComic) imgEl.onclick = () => window.open(img.url, '_blank');
         item.appendChild(imgEl);
+
+        if (isComic) {
+          const badge = document.createElement('div');
+          badge.className = 'gallery-comic-badge';
+          badge.textContent = '📖 Comic';
+          item.appendChild(badge);
+        }
 
         const dlBtn = document.createElement('button');
         dlBtn.className = 'gallery-dl-btn';
-        dlBtn.textContent = '⬇️';
-        dlBtn.onclick = () => dlGalleryImg(img.url, img.kidName || 'art');
+        dlBtn.textContent = isComic ? '📖' : '⬇️';
+        dlBtn.onclick = () => isComic ? window.open(img.url, '_blank') : dlGalleryImg(img.url, img.kidName || 'art');
         item.appendChild(dlBtn);
 
         const info = document.createElement('div');
         info.className = 'gallery-item-info';
-        info.innerHTML = `<strong>${escHtml(img.kidName||'')}</strong><span>${escHtml((img.prompt||'').substring(0,40))}${(img.prompt||'').length>40?'…':''}</span>`;
+        const label = (isComic ? '📖 ' : '') + (img.prompt || '');
+        info.innerHTML = `<strong>${escHtml(img.kidName||'')}</strong><span>${escHtml(label.substring(0,40))}${label.length>40?'…':''}</span>`;
         item.appendChild(info);
 
         grid.appendChild(item);

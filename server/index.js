@@ -57,7 +57,13 @@ app.get('/api/health', (req, res) => {
 
 // ── Config endpoint — tells frontend if Google API is enabled ──
 app.get('/api/config', (req, res) => {
-  res.json({ googleApiEnabled: ENABLE_GOOGLE_API });
+  res.json({
+    googleApiEnabled: ENABLE_GOOGLE_API,
+    // Unsigned upload preset + cloud name are not secrets — needed so the browser
+    // can upload large comic PDFs straight to Cloudinary without routing through us.
+    cloudinaryName: CLOUDINARY_NAME || null,
+    cloudinaryPreset: (CLOUDINARY_NAME && CLOUDINARY_PRESET) ? CLOUDINARY_PRESET : null
+  });
 });
 
 // ── Concurrency limiter ───────────────────────────────────
@@ -220,6 +226,31 @@ app.post('/api/save', async (req, res) => {
     res.json({ url: cloudinaryUrl });
   } catch (err) {
     console.error('Save error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Record an already-uploaded comic PDF in Astra ─────────
+// The browser uploads the PDF straight to Cloudinary (it can be large — several
+// images embedded in one file) and only sends us the resulting short URL here.
+app.post('/api/save-comic', async (req, res) => {
+  try {
+    const { kidName, url, title } = req.body;
+    if (!url || !kidName) return res.status(400).json({ error: 'kidName and url required' });
+
+    if (ASTRA_ENDPOINT && ASTRA_TOKEN) {
+      await saveToAstra({
+        kidName,
+        url,
+        prompt: title || 'My Comic Book',
+        type: 'comic',
+        timestamp: Date.now()
+      });
+    }
+
+    res.json({ url });
+  } catch (err) {
+    console.error('Save comic error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
