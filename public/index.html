@@ -268,7 +268,7 @@
   .comic-panel { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
   .comic-panel-img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
   .comic-panel-error { padding: 30px 10px; text-align: center; color: #e53e3e; font-size: 0.85rem; }
-  .comic-caption { padding: 8px; font-size: 0.8rem; color: #555; }
+  .comic-caption { padding: 8px; font-size: 1.05rem; color: #444; font-weight: 600; }
   .comic-actions { display: flex; gap: 10px; }
 
   /* ── Toast ── */
@@ -745,7 +745,7 @@ async function generateComic() {
   result.innerHTML = '';
 
   // Panel 1: the original picture with the introduction
-  addComicPanel(result, storyState.baseImage, `Part 1: ${intro}`);
+  addComicPanel(result, storyState.baseImage, intro);
 
   for (let i = 0; i < steps.length; i++) {
     btn.textContent = `✨ Creating part ${i + 2} of 6...`;
@@ -767,9 +767,9 @@ async function generateComic() {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      addComicPanel(result, data.url, `Part ${i + 2}: ${steps[i]}`);
+      addComicPanel(result, data.url, steps[i]);
     } catch (e) {
-      addComicPanel(result, null, `Part ${i + 2}: ${steps[i]}`, true);
+      addComicPanel(result, null, steps[i], true);
       toast(`Oops, part ${i + 2} failed: ${e.message}`);
     }
     // Brief pause so Replicate's concurrency limit frees up before the next request
@@ -827,7 +827,7 @@ function printComic() {
           .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
           .comic-panel { border: 3px solid #333; border-radius: 10px; padding: 8px; text-align: center; page-break-inside: avoid; }
           .comic-panel-img { max-width: 100%; border-radius: 6px; }
-          .comic-caption { margin-top: 6px; font-size: 0.9rem; }
+          .comic-caption { margin-top: 6px; font-size: 1.2rem; font-weight: 600; }
           .comic-panel-error { padding: 30px 10px; color: #e53e3e; }
         </style>
       </head>
